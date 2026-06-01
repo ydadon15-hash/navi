@@ -1,0 +1,133 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// SubscriptionTier values: "free" | "core" | "full"
+
+model User {
+  id                 Int       @id @default(autoincrement())
+  name               String
+  email              String    @unique
+  password           String
+  isStudent          Boolean
+  schoolName         String?
+  canvasToken        String?
+  onboardingComplete Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  subscriptionTier   String    @default("free")
+  trialStartDate     DateTime?
+  lastSyncedAt       DateTime?
+
+  shareToken              String?
+  sharingEnabled          Boolean   @default(false)
+  notificationPreferences String?
+  stripeCustomerId        String?
+  stripeSubscriptionId    String?
+
+  classes        Class[]
+  studyPlanDays  StudyPlanDay[]
+  dayNotes       DayNote[]
+  dayTasks       DayTask[]
+  studySessions  StudySession[]
+}
+
+model Class {
+  id             Int     @id @default(autoincrement())
+  userId         Int
+  name           String
+  colorIndex     Int
+  canvasCourseId String?
+  currentGrade   Float?
+  letterGrade    String?
+
+  user        User         @relation(fields: [userId], references: [id])
+  assignments Assignment[]
+  syllabi     Syllabus[]
+}
+
+model Assignment {
+  id                 Int      @id @default(autoincrement())
+  classId            Int
+  title              String
+  dueDate            DateTime
+  isCompleted        Boolean  @default(false)
+  canvasAssignmentId String?
+  pointsPossible     Float?
+  pointsEarned       Float?
+  note               String?
+  difficulty         String?
+
+  class Class @relation(fields: [classId], references: [id])
+}
+
+model Syllabus {
+  id             Int      @id @default(autoincrement())
+  classId        Int
+  rawText        String
+  summarizedJSON String?
+  uploadedAt     DateTime @default(now())
+
+  class Class @relation(fields: [classId], references: [id])
+}
+
+model StudyPlanDay {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  date      String   // YYYY-MM-DD
+  createdAt DateTime @default(now())
+
+  user  User            @relation(fields: [userId], references: [id])
+  tasks StudyPlanTask[]
+}
+
+model StudyPlanTask {
+  id               Int          @id @default(autoincrement())
+  studyPlanDayId   Int
+  classId          Int
+  description      String
+  estimatedMinutes Int
+  isCompleted      Boolean      @default(false)
+  rolledOver       Boolean      @default(false)
+  movedToDate      String?
+  createdAt        DateTime     @default(now())
+
+  studyPlanDay StudyPlanDay @relation(fields: [studyPlanDayId], references: [id])
+}
+
+model StudySession {
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  studyPlanDayId Int?
+  taskId         Int?
+  studiedMinutes Int
+  sessionType    String
+  createdAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model DayNote {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  date      String   // YYYY-MM-DD
+  note      String   @default("")
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model DayTask {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  date        String   // YYYY-MM-DD
+  title       String
+  isCompleted Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
