@@ -21,7 +21,17 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5176', 'http://localhost:5178'],
+  origin: [
+    // Production
+    'https://navi-eosin-alpha.vercel.app',
+    'https://mynaviapp.com',
+    'https://www.mynaviapp.com',
+    // Local development
+    'http://localhost:5173',
+    'http://localhost:5176',
+    'http://localhost:5178',
+  ],
+  credentials: true,
 }));
 
 // Stripe webhook needs raw body — must come before express.json()
