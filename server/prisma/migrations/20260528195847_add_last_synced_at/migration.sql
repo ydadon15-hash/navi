@@ -1,2 +1,2 @@
 -- AlterTable
-ALTER TABLE "User" ADD COLUMN "lastSyncedAt" DATETIME;
+ALTER TABLE "User" ADD COLUMN "lastSyncedAt" TIMESTAMP(3);
