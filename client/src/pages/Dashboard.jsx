@@ -1003,7 +1003,7 @@ function DashboardTab({
   todayTasks, onToggleDayTask, onAddDayTask, onDeleteDayTask,
   onDayNoteS, onDayTaskAdd, onDayTaskComplete, onDayTaskDelete,
   onDifficultyRate,
-  gcalEvents, gcalConnected,
+  gcalEvents, gcalConnected, onGcalDisconnect,
 }) {
   const user      = getUser()
   const today     = new Date()
@@ -1103,7 +1103,7 @@ function DashboardTab({
           50%       { box-shadow: 0 0 0 7px rgba(46,158,104,0); }
         }
       `}</style>
-      <ConnectToolsSection gcalConnected={gcalConnected} onGcalDisconnect={handleGcalDisconnect} token={getToken()} />
+      <ConnectToolsSection gcalConnected={gcalConnected} onGcalDisconnect={onGcalDisconnect} token={getToken()} />
 
       {/* Two-column main grid */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 20, alignItems: 'start' }}>
@@ -2454,6 +2454,7 @@ export default function Dashboard() {
               onDifficultyRate={handleDifficultyRate}
               gcalEvents={gcalEvents}
               gcalConnected={gcalConnected}
+              onGcalDisconnect={handleGcalDisconnect}
             />
           )}
           {activeTab === 1 && <PerformanceTab />}
