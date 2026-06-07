@@ -124,6 +124,22 @@ router.get('/events', requireAuth, async (req, res) => {
 });
 
 /**
+ * DELETE /api/google/disconnect
+ * Clears the stored refresh token, effectively disconnecting Google Calendar.
+ */
+router.delete('/disconnect', requireAuth, async (req, res) => {
+  try {
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: { googleRefreshToken: null },
+    });
+    res.json({ disconnected: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/**
  * POST /api/google/sync
  * Manually trigger a sync for the current user (useful for testing).
  */

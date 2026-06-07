@@ -766,7 +766,7 @@ function OfficeHoursReminder({ classes, syllabusData, rolledOverByClass }) {
 }
 
 // ─── Connect Your Tools section ──────────────────────────────────────────────
-function ConnectToolsSection({ gcalConnected, token }) {
+function ConnectToolsSection({ gcalConnected, onGcalDisconnect, token }) {
   // Google Calendar SVG logo
   const GCalLogo = () => (
     <svg width="36" height="36" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -843,17 +843,33 @@ function ConnectToolsSection({ gcalConnected, token }) {
           </div>
 
           {gcalConnected ? (
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 6,
-              padding: '7px 14px', borderRadius: 8,
-              background: 'rgba(46,158,104,0.10)', border: '1px solid rgba(46,158,104,0.3)',
-            }}>
-              <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                <circle cx="6.5" cy="6.5" r="6.5" fill="#2E9E68"/>
-                <path d="M3.5 6.5l2 2 4-4" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <span style={{ fontFamily: 'Sora, sans-serif', fontSize: 12,
-                              fontWeight: 600, color: '#2E9E68' }}>Connected</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '7px 14px', borderRadius: 8,
+                background: 'rgba(46,158,104,0.10)', border: '1px solid rgba(46,158,104,0.3)',
+              }}>
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                  <circle cx="6.5" cy="6.5" r="6.5" fill="#2E9E68"/>
+                  <path d="M3.5 6.5l2 2 4-4" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span style={{ fontFamily: 'Sora, sans-serif', fontSize: 12,
+                                fontWeight: 600, color: '#2E9E68' }}>Connected</span>
+              </div>
+              <button
+                onClick={onGcalDisconnect}
+                style={{
+                  padding: '7px 12px', borderRadius: 8, cursor: 'pointer',
+                  background: 'transparent', border: '1px solid var(--border)',
+                  fontFamily: 'Sora, sans-serif', fontSize: 12,
+                  color: 'var(--text-muted)', fontWeight: 500,
+                  transition: 'border-color 0.15s, color 0.15s',
+                }}
+                onMouseOver={e => { e.currentTarget.style.borderColor = '#e55'; e.currentTarget.style.color = '#e55' }}
+                onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)' }}
+              >
+                Disconnect
+              </button>
             </div>
           ) : (
             <button
@@ -1087,7 +1103,7 @@ function DashboardTab({
           50%       { box-shadow: 0 0 0 7px rgba(46,158,104,0); }
         }
       `}</style>
-      <ConnectToolsSection gcalConnected={gcalConnected} token={getToken()} />
+      <ConnectToolsSection gcalConnected={gcalConnected} onGcalDisconnect={handleGcalDisconnect} token={getToken()} />
 
       {/* Two-column main grid */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 20, alignItems: 'start' }}>
@@ -2225,6 +2241,19 @@ export default function Dashboard() {
       console.error('[Dashboard] loadAll:', e)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleGcalDisconnect() {
+    try {
+      await fetch('/api/google/disconnect', {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${getToken()}` },
+      })
+      setGcalConnected(false)
+      setGcalEvents([])
+    } catch (e) {
+      console.error('[Dashboard] gcal disconnect:', e)
     }
   }
 
