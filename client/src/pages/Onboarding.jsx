@@ -150,17 +150,22 @@ export default function Onboarding() {
   const [newClassName,    setNewClassName]   = useState('')
   const [manualToken,     setManualToken]    = useState('')
   const [saving,          setSaving]         = useState(false)
+  const [gcalConnected,   setGcalConnected]  = useState(false)
 
-  // Guards
+  // Guards + post-OAuth redirect detection
   useEffect(() => {
     if (!token) { navigate('/login', { replace: true }); return }
     if (storedUser?.onboardingComplete) { navigate('/dashboard', { replace: true }); return }
-  }, [])
 
-  // Auto-start Canvas simulation on step 3
-  useEffect(() => {
-    if (step === 3 && canvasState === 'idle') connectCanvas()
-  }, [step])
+    // After Google OAuth, Google redirects back to /onboarding?gcal=connected
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('gcal') === 'connected') {
+      setGcalConnected(true)
+      setStep(3)
+      // Clean the query param from the URL without a page reload
+      window.history.replaceState({}, '', '/onboarding')
+    }
+  }, [])
 
   const filteredSchools = schoolQuery.length >= 2
     ? SCHOOLS.filter(s => s.name.toLowerCase().includes(schoolQuery.toLowerCase())).slice(0, 7)
@@ -349,80 +354,90 @@ export default function Onboarding() {
     </>
   )
 
-  // ── Step 3: Canvas connection ──────────────────────────────────────────
+  // ── Step 3: Calendar integrations ─────────────────────────────────────
 
   const renderStep3 = () => wrap(
     <>
       {stepLabel(3)}
-      {heading('Connecting to Canvas')}
+      {heading('Connect your calendars', 'Bring your schedule into Navi.')}
 
-      <div className="card" style={{ textAlign: 'center', padding: 40 }}>
-        {canvasState === 'loading' && (
-          <>
-            <div style={{ fontSize: 40, marginBottom: 16,
-                           animation: 'spin 1s linear infinite' }}>⟳</div>
-            <style>{`@keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }`}</style>
-            <p style={{ fontFamily: 'Sora, sans-serif', color: 'var(--text-muted)',
-                         fontSize: 15, margin: 0 }}>
-              Connecting to {selectedSchool?.name || 'Canvas'}…
-            </p>
-          </>
-        )}
+      <div style={{ display: 'flex', gap: 14, marginBottom: 28 }}>
 
-        {canvasState === 'success' && (
-          <>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
-            <h2 style={{ fontSize: 22, marginBottom: 8 }}>Connected successfully</h2>
-            <p style={{ fontFamily: 'Sora, sans-serif', color: 'var(--text-muted)',
-                         fontSize: 14, margin: '0 0 28px' }}>
-              Found {classes.length} course{classes.length !== 1 ? 's' : ''} in your Canvas account.
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 28 }}>
-              {classes.map(c => (
-                <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10,
-                                          padding: '8px 12px', background: 'var(--bg)',
-                                          borderRadius: 8, textAlign: 'left' }}>
-                  <div style={{ width: 10, height: 10, borderRadius: '50%', flexShrink: 0,
-                                  background: CLASS_COLORS[c.colorIndex] || CLASS_COLORS[1] }} />
-                  <span style={{ fontFamily: 'Sora, sans-serif', fontSize: 14,
-                                  color: 'var(--text)' }}>{c.name}</span>
-                </div>
-              ))}
+        {/* Google Calendar card */}
+        <div className="card" style={{
+          flex: 1, padding: '28px 20px', textAlign: 'center',
+          border: gcalConnected ? '1px solid rgba(46,158,104,0.5)' : '1px solid var(--border)',
+          background: gcalConnected ? 'rgba(46,158,104,0.05)' : 'var(--surface)',
+          borderRadius: 14,
+        }}>
+          <div style={{ fontSize: 36, marginBottom: 10 }}>📅</div>
+          <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 600,
+                         color: 'var(--text)', marginBottom: 8 }}>
+            Google Calendar
+          </div>
+          <p style={{ fontFamily: 'Sora, sans-serif', fontSize: 12, color: 'var(--text-muted)',
+                       margin: '0 0 18px', lineHeight: 1.5 }}>
+            Sync your upcoming events and deadlines automatically.
+          </p>
+          {gcalConnected ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center',
+                           gap: 6, color: '#2E9E68', fontFamily: 'Sora, sans-serif',
+                           fontSize: 13, fontWeight: 600 }}>
+              <span>✓</span> Connected
             </div>
-            <button onClick={() => goTo(4)} style={btn.primary}>Continue</button>
-          </>
-        )}
+          ) : (
+            <button
+              onClick={() => { window.location.href = `/api/google/auth?token=${token}` }}
+              style={{
+                ...btn.primary,
+                padding: '9px 20px',
+                fontSize: 13,
+                borderRadius: 8,
+              }}
+            >
+              Connect
+            </button>
+          )}
+        </div>
 
-        {canvasState === 'error' && (
-          <>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>⚠️</div>
-            <h2 style={{ fontSize: 20, marginBottom: 8 }}>Couldn't connect automatically</h2>
-            <p style={{ fontFamily: 'Sora, sans-serif', color: 'var(--text-muted)',
-                         fontSize: 14, margin: '0 0 20px' }}>
-              No problem — paste a Canvas personal access token below and we'll connect that way.
-            </p>
-            <input
-              type="text"
-              placeholder="Paste your Canvas access token"
-              value={manualToken}
-              onChange={e => setManualToken(e.target.value)}
-              style={{ ...input, marginBottom: 12 }}
-            />
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => { setCanvasState('idle') }} style={{
-                ...btn.primary, background: 'var(--surface)',
-                color: 'var(--text)', border: '1px solid var(--border)', flex: 1,
-              }}>
-                Retry
-              </button>
-              <button onClick={async () => { await fetchClasses(); goTo(4) }}
-                style={{ ...btn.primary, flex: 1 }}>
-                Skip for now
-              </button>
-            </div>
-          </>
-        )}
+        {/* Canvas card — Coming Soon */}
+        <div className="card" style={{
+          flex: 1, padding: '28px 20px', textAlign: 'center',
+          border: '1px solid var(--border)', borderRadius: 14,
+          opacity: 0.65,
+        }}>
+          <div style={{ fontSize: 36, marginBottom: 10 }}>🎓</div>
+          <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 15, fontWeight: 600,
+                         color: 'var(--text)', marginBottom: 8 }}>
+            Canvas
+          </div>
+          <p style={{ fontFamily: 'Sora, sans-serif', fontSize: 12, color: 'var(--text-muted)',
+                       margin: '0 0 18px', lineHeight: 1.5 }}>
+            Sync your assignments and course deadlines from Canvas.
+          </p>
+          <div style={{
+            display: 'inline-block',
+            padding: '6px 14px', borderRadius: 20,
+            background: 'var(--bg)', border: '1px solid var(--border)',
+            fontFamily: 'Sora, sans-serif', fontSize: 12,
+            color: 'var(--text-muted)', fontWeight: 500,
+          }}>
+            Coming Soon
+          </div>
+        </div>
       </div>
+
+      {gcalConnected ? (
+        <button onClick={async () => { await fetchClasses(); goTo(4) }} style={btn.primary}>
+          Continue
+        </button>
+      ) : (
+        <div style={{ textAlign: 'center' }}>
+          <button onClick={async () => { await fetchClasses(); goTo(4) }} style={btn.ghost}>
+            Skip for now
+          </button>
+        </div>
+      )}
     </>
   )
 

@@ -14,8 +14,9 @@ const checkinRoutes      = require('./routes/checkin');
 const performanceRoutes  = require('./routes/performance');
 const settingsRoutes     = require('./routes/settings');
 const viewRoutes         = require('./routes/view');
-const subscriptionRoutes = require('./routes/subscription');
-const { startCron }      = require('./cron');
+const subscriptionRoutes    = require('./routes/subscription');
+const googleCalendarRoutes  = require('./routes/googleCalendar');
+const { startCron }         = require('./cron');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -56,6 +57,7 @@ app.use('/api/performance',  performanceRoutes);
 app.use('/api/settings',     settingsRoutes);
 app.use('/api/view',         viewRoutes);
 app.use('/api/subscription', subscriptionRoutes);
+app.use('/api/google',       googleCalendarRoutes);
 
 startCron();
 

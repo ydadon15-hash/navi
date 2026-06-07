@@ -765,6 +765,68 @@ function OfficeHoursReminder({ classes, syllabusData, rolledOverByClass }) {
   )
 }
 
+// ─── Google Calendar card ─────────────────────────────────────────────────────
+function GoogleCalendarCard({ events, connected }) {
+  function fmtEventTime(iso) {
+    const d = new Date(iso)
+    return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+  }
+  function fmtEventDate(iso) {
+    const d = new Date(iso)
+    const today = new Date()
+    const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1)
+    if (isSameDay(d, today))    return 'Today'
+    if (isSameDay(d, tomorrow)) return 'Tomorrow'
+    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+  }
+
+  if (!connected) return null
+
+  return (
+    <div style={{
+      background: 'var(--surface)', border: '1px solid var(--border)',
+      borderRadius: 14, padding: '18px 20px', marginBottom: 16,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+        <span style={{ fontSize: 16 }}>📅</span>
+        <span style={{ fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 600,
+                        color: 'var(--text)', letterSpacing: '0.01em' }}>
+          Upcoming Events
+        </span>
+      </div>
+
+      {events.length === 0 ? (
+        <p style={{ fontFamily: 'Sora, sans-serif', fontSize: 12, color: 'var(--text-muted)',
+                     margin: 0, textAlign: 'center', padding: '10px 0' }}>
+          No events in the next 7 days.
+        </p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {events.map(ev => (
+            <div key={ev.id} style={{
+              padding: '9px 12px', borderRadius: 9,
+              background: 'var(--bg)', border: '1px solid var(--border)',
+            }}>
+              <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 500,
+                             color: 'var(--text)', marginBottom: 3,
+                             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {ev.title}
+              </div>
+              <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 11, color: 'var(--text-muted)' }}>
+                {fmtEventDate(ev.startTime)}
+                {ev.startTime && !ev.startTime.endsWith('T00:00:00.000Z')
+                  ? ` · ${fmtEventTime(ev.startTime)}`
+                  : ''}
+                {ev.location ? ` · ${ev.location}` : ''}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Dashboard tab content ────────────────────────────────────────────────────
 function DashboardTab({
   classes, weekData, monthAssignments, monthIndicators,
@@ -776,6 +838,7 @@ function DashboardTab({
   todayTasks, onToggleDayTask, onAddDayTask, onDeleteDayTask,
   onDayNoteS, onDayTaskAdd, onDayTaskComplete, onDayTaskDelete,
   onDifficultyRate,
+  gcalEvents, gcalConnected,
 }) {
   const user      = getUser()
   const today     = new Date()
@@ -949,6 +1012,7 @@ function DashboardTab({
             onAddDayTask={onAddDayTask}
             onDeleteDayTask={onDeleteDayTask}
           />
+          <GoogleCalendarCard events={gcalEvents} connected={gcalConnected} />
           <SyllabusStatusCard classes={classes} syllabusStatus={syllabusStatus} />
           <OfficeHoursReminder
             classes={classes}
@@ -1948,6 +2012,8 @@ export default function Dashboard() {
   const [syllabusData,     setSyllabusData]     = useState({})   // classId -> parsed summarizedJSON
   const [rolledOverByClass, setRolledOverByClass] = useState({}) // classId -> count
   const [canvasStatus,     setCanvasStatus]     = useState({ isConnected: false })
+  const [gcalConnected,    setGcalConnected]    = useState(false)
+  const [gcalEvents,       setGcalEvents]       = useState([])
   const [notePopup,        setNotePopup]        = useState({ open: false, assignment: null })
   const [selectedDate,     setSelectedDate]     = useState(null)
   const [dayData,          setDayData]          = useState(null)
@@ -1980,15 +2046,24 @@ export default function Dashboard() {
   async function loadAll() {
     const h = { Authorization: `Bearer ${getToken()}` }
     try {
-      const [cls, week, canvas, todayDay] = await Promise.all([
+      const [cls, week, canvas, todayDay, gcalStatus] = await Promise.all([
         fetch('/api/classes',         { headers: h }).then(r => r.json()),
         fetch('/api/assignments/week', { headers: h }).then(r => r.json()),
         fetch('/api/canvas/status',   { headers: h }).then(r => r.json()),
         fetch(`/api/day/${todayStr}`, { headers: h }).then(r => r.json()),
+        fetch('/api/google/status',   { headers: h }).then(r => r.json()).catch(() => ({ connected: false })),
       ])
       setClasses(Array.isArray(cls) ? cls : [])
       if (week && typeof week === 'object') setWeekData(week)
       if (canvas) setCanvasStatus(canvas)
+
+      if (gcalStatus?.connected) {
+        setGcalConnected(true)
+        try {
+          const events = await fetch('/api/google/events', { headers: h }).then(r => r.json())
+          if (Array.isArray(events)) setGcalEvents(events)
+        } catch (_) {}
+      }
       setTodayTasks(Array.isArray(todayDay?.tasks) ? todayDay.tasks : [])
 
       if (Array.isArray(cls)) {
@@ -2219,6 +2294,8 @@ export default function Dashboard() {
               onDayTaskComplete={handleDayTaskComplete}
               onDayTaskDelete={handleDayTaskDelete}
               onDifficultyRate={handleDifficultyRate}
+              gcalEvents={gcalEvents}
+              gcalConnected={gcalConnected}
             />
           )}
           {activeTab === 1 && <PerformanceTab />}
