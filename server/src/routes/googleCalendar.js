@@ -68,6 +68,15 @@ router.get('/callback', async (req, res) => {
       data: { googleRefreshToken: tokens.refresh_token },
     });
 
+    // Immediately sync so events appear the moment the user lands on the dashboard
+    try {
+      await syncGoogleCalendar(userId, tokens.refresh_token);
+      console.log(`[Google OAuth] Initial sync complete for user ${userId}`);
+    } catch (e) {
+      console.error(`[Google OAuth] Initial sync failed for user ${userId}:`, e.message);
+      // Non-fatal — redirect regardless so the user isn't left hanging
+    }
+
     res.redirect(`${frontendUrl}/onboarding?gcal=connected`);
   } catch (e) {
     console.error('[Google OAuth] callback error:', e.message);
