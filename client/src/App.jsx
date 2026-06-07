@@ -9,6 +9,7 @@ import Design     from './pages/Design.jsx'
 import Pricing    from './pages/Pricing.jsx'
 import Settings   from './pages/Settings.jsx'
 import ParentView from './pages/ParentView.jsx'
+import Privacy    from './pages/Privacy.jsx'
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
         <Route path="/pricing"     element={<Pricing />} />
         <Route path="/settings"    element={<Settings />} />
         <Route path="/view/:token" element={<ParentView />} />
+        <Route path="/privacy"     element={<Privacy />} />
       </Routes>
     </BrowserRouter>
   )

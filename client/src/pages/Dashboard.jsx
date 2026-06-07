@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { getToken, getUser, isLoggedIn } from '../lib/auth'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -2446,6 +2446,35 @@ export default function Dashboard() {
           onSave={handleSaveNote}
         />
       )}
+
+      {/* Footer */}
+      <footer style={{
+        marginLeft: 0, borderTop: '1px solid var(--border)',
+        padding: '14px 28px', display: 'flex', alignItems: 'center',
+        justifyContent: 'center', gap: 20,
+      }}>
+        <span style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif' }}>
+          © {new Date().getFullYear()} Navi
+        </span>
+        <Link to="/privacy" style={{
+          fontSize: 12, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif',
+          textDecoration: 'none', fontWeight: 500,
+        }}
+          onMouseOver={e => e.currentTarget.style.color = 'var(--accent)'}
+          onMouseOut={e => e.currentTarget.style.color = 'var(--text-muted)'}
+        >
+          Privacy Policy
+        </Link>
+        <a href="mailto:yonathan@mynaviapp.com" style={{
+          fontSize: 12, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif',
+          textDecoration: 'none', fontWeight: 500,
+        }}
+          onMouseOver={e => e.currentTarget.style.color = 'var(--accent)'}
+          onMouseOut={e => e.currentTarget.style.color = 'var(--text-muted)'}
+        >
+          Contact
+        </a>
+      </footer>
     </div>
   )
 }
