@@ -28,8 +28,8 @@ function startCron() {
     }
   });
 
-  // ── Google Calendar sync — every day at 7 AM ─────────────────────────
-  cron.schedule('0 7 * * *', async () => {
+  // ── Google Calendar sync — every 4 hours ────────────────────────────
+  cron.schedule('0 */4 * * *', async () => {
     console.log('[Cron] Starting scheduled Google Calendar sync...');
     try {
       const users = await prisma.user.findMany({
@@ -51,7 +51,7 @@ function startCron() {
   });
 
   console.log('[Cron] Canvas auto-sync scheduled (every 4 hours)');
-  console.log('[Cron] Google Calendar sync scheduled (daily at 7 AM)');
+  console.log('[Cron] Google Calendar sync scheduled (every 4 hours)');
 }
 
 module.exports = { startCron };
