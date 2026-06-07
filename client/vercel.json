@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://brilliant-cooperation-production-7061.up.railway.app/api/:path*"
+      "destination": "https://mynaviapp.up.railway.app/api/:path*"
     },
     {
       "source": "/(.*)",
