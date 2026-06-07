@@ -765,6 +765,155 @@ function OfficeHoursReminder({ classes, syllabusData, rolledOverByClass }) {
   )
 }
 
+// ─── Connect Your Tools section ──────────────────────────────────────────────
+function ConnectToolsSection({ gcalConnected, token }) {
+  // Google Calendar SVG logo
+  const GCalLogo = () => (
+    <svg width="36" height="36" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="6" y="6" width="36" height="36" rx="6" fill="#fff" stroke="#e0e0e0" strokeWidth="1.5"/>
+      <rect x="6" y="14" width="36" height="4" fill="#4285F4"/>
+      <rect x="6" y="14" width="36" height="4" fill="#4285F4"/>
+      <text x="24" y="34" textAnchor="middle" fontFamily="Google Sans, sans-serif" fontSize="14" fontWeight="700" fill="#4285F4">31</text>
+      <rect x="13" y="6" width="3" height="8" rx="1.5" fill="#4285F4"/>
+      <rect x="32" y="6" width="3" height="8" rx="1.5" fill="#4285F4"/>
+    </svg>
+  )
+
+  // Canvas flame-style SVG logo
+  const CanvasLogo = () => (
+    <svg width="36" height="36" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="6" y="6" width="36" height="36" rx="6" fill="#E66000"/>
+      <text x="24" y="31" textAnchor="middle" fontFamily="sans-serif" fontSize="18" fontWeight="800" fill="#fff">C</text>
+    </svg>
+  )
+
+  const cardBase = {
+    flex: 1,
+    background: 'var(--surface)',
+    border: '1px solid var(--border)',
+    borderRadius: 16,
+    padding: '24px 22px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 10,
+    transition: 'border-color 0.2s, box-shadow 0.2s',
+    position: 'relative',
+    overflow: 'hidden',
+  }
+
+  return (
+    <div style={{ marginBottom: 24 }}>
+      <p style={{
+        fontFamily: 'Sora, sans-serif', fontSize: 11, fontWeight: 700,
+        letterSpacing: '0.1em', textTransform: 'uppercase',
+        color: 'var(--text-muted)', margin: '0 0 12px',
+      }}>
+        Connect Your Tools
+      </p>
+
+      <div style={{ display: 'flex', gap: 14 }}>
+
+        {/* ── Google Calendar card ── */}
+        <div style={{
+          ...cardBase,
+          borderColor: gcalConnected ? 'rgba(46,158,104,0.4)' : 'var(--border)',
+          boxShadow: gcalConnected ? '0 0 0 0 transparent' : 'none',
+        }}>
+          {/* Subtle top-edge colour bar */}
+          <div style={{
+            position: 'absolute', top: 0, left: 0, right: 0, height: 3,
+            background: gcalConnected
+              ? 'linear-gradient(90deg,#2E9E68,#34c97e)'
+              : 'linear-gradient(90deg,#4285F4,#34A853)',
+            borderRadius: '16px 16px 0 0',
+          }} />
+
+          <GCalLogo />
+
+          <div>
+            <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 14, fontWeight: 700,
+                           color: 'var(--text)', marginBottom: 4 }}>
+              Google Calendar
+            </div>
+            <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 12,
+                           color: 'var(--text-muted)', lineHeight: 1.5 }}>
+              Sync your events and deadlines automatically.
+            </div>
+          </div>
+
+          {gcalConnected ? (
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 6,
+              padding: '7px 14px', borderRadius: 8,
+              background: 'rgba(46,158,104,0.10)', border: '1px solid rgba(46,158,104,0.3)',
+            }}>
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                <circle cx="6.5" cy="6.5" r="6.5" fill="#2E9E68"/>
+                <path d="M3.5 6.5l2 2 4-4" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <span style={{ fontFamily: 'Sora, sans-serif', fontSize: 12,
+                              fontWeight: 600, color: '#2E9E68' }}>Connected</span>
+            </div>
+          ) : (
+            <button
+              onClick={() => { window.location.href = `/api/google/auth?token=${token}` }}
+              style={{
+                marginTop: 6,
+                padding: '8px 20px', borderRadius: 8, border: 'none',
+                background: '#2E9E68', color: '#fff',
+                fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 600,
+                cursor: 'pointer',
+                animation: 'gcal-pulse 2.2s ease-in-out infinite',
+              }}
+            >
+              Connect
+            </button>
+          )}
+        </div>
+
+        {/* ── Canvas card ── */}
+        <div style={{ ...cardBase, opacity: 0.72 }}>
+          {/* Top-edge colour bar */}
+          <div style={{
+            position: 'absolute', top: 0, left: 0, right: 0, height: 3,
+            background: 'linear-gradient(90deg,#E66000,#ff8533)',
+            borderRadius: '16px 16px 0 0',
+            opacity: 0.5,
+          }} />
+
+          <CanvasLogo />
+
+          <div>
+            <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 14, fontWeight: 700,
+                           color: 'var(--text)', marginBottom: 4 }}>
+              Canvas LMS
+            </div>
+            <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 12,
+                           color: 'var(--text-muted)', lineHeight: 1.5 }}>
+              Import your assignments and due dates.
+            </div>
+          </div>
+
+          <button
+            disabled
+            style={{
+              marginTop: 6,
+              padding: '8px 20px', borderRadius: 8,
+              border: '1px solid var(--border)', background: 'var(--bg)',
+              fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 600,
+              color: 'var(--text-muted)', cursor: 'not-allowed',
+            }}
+          >
+            Coming Soon
+          </button>
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
 // ─── Google Calendar card ─────────────────────────────────────────────────────
 function GoogleCalendarCard({ events, connected }) {
   function fmtEventTime(iso) {
@@ -879,7 +1028,7 @@ function DashboardTab({
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
           {/* Am I on track button */}
           <button
             onClick={handleOnTrack}
@@ -894,35 +1043,6 @@ function DashboardTab({
           >
             {checkinLoading ? 'Checking in…' : 'Am I on track?'}
           </button>
-
-          {/* Canvas status */}
-          {canvasStatus.isConnected ? (
-            <div style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
-              padding: '8px 14px', borderRadius: 10, background: 'rgba(46,158,104,0.07)',
-              border: '1px solid rgba(46,158,104,0.2)',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: GREEN, flexShrink: 0 }} />
-                <span style={{ fontSize: 12.5, fontFamily: 'Sora, sans-serif', color: GREEN, fontWeight: 600 }}>Canvas connected</span>
-              </div>
-              {canvasStatus.lastSyncedAt && (
-                <span style={{ fontSize: 10.5, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif', marginTop: 2 }}>
-                  Last synced {formatRelative(canvasStatus.lastSyncedAt)}
-                </span>
-              )}
-            </div>
-          ) : (
-            <button style={{
-              padding: '10px 20px', borderRadius: 9,
-              background: ACCENT, color: '#fff', border: 'none',
-              fontFamily: 'Sora, sans-serif', fontSize: 13.5, fontWeight: 600,
-              cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(58,123,213,0.35)',
-            }}>
-              Connect Canvas
-            </button>
-          )}
         </div>
       </div>
 
@@ -959,6 +1079,15 @@ function DashboardTab({
           </div>
         </div>
       )}
+
+      {/* Connect Your Tools */}
+      <style>{`
+        @keyframes gcal-pulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(46,158,104,0.45); }
+          50%       { box-shadow: 0 0 0 7px rgba(46,158,104,0); }
+        }
+      `}</style>
+      <ConnectToolsSection gcalConnected={gcalConnected} token={getToken()} />
 
       {/* Two-column main grid */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 20, alignItems: 'start' }}>
