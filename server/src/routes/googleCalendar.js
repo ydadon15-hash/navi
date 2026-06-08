@@ -109,6 +109,8 @@ router.get('/events', requireAuth, async (req, res) => {
     const now = new Date();
     const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
+    console.log(`[GCal/events] Fetching events for user ${req.user.id}, range: ${now.toISOString()} – ${in7Days.toISOString()}`);
+
     const events = await prisma.calendarEvent.findMany({
       where: {
         userId: req.user.id,
@@ -117,8 +119,10 @@ router.get('/events', requireAuth, async (req, res) => {
       orderBy: { startTime: 'asc' },
     });
 
+    console.log(`[GCal/events] Returning ${events.length} events for user ${req.user.id}`);
     res.json(events);
   } catch (e) {
+    console.error(`[GCal/events] Error for user ${req.user.id}:`, e.message);
     res.status(500).json({ error: e.message });
   }
 });

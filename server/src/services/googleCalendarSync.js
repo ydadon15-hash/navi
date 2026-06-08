@@ -17,6 +17,8 @@ function getOAuth2Client() {
  * @param {string} refreshToken
  */
 async function syncGoogleCalendar(userId, refreshToken) {
+  console.log(`[GCalSync] Starting sync for user ${userId}`);
+
   const auth = getOAuth2Client();
   auth.setCredentials({ refresh_token: refreshToken });
 
@@ -35,7 +37,9 @@ async function syncGoogleCalendar(userId, refreshToken) {
   });
 
   const items = response.data.items || [];
+  console.log(`[GCalSync] Google API returned ${items.length} events for user ${userId}`);
 
+  let saved = 0;
   for (const event of items) {
     const googleEventId = event.id;
     const title = event.summary || '(No title)';
@@ -50,22 +54,33 @@ async function syncGoogleCalendar(userId, refreshToken) {
     const location = event.location || null;
     const description = event.description || null;
 
-    await prisma.calendarEvent.upsert({
-      where: { userId_googleEventId: { userId, googleEventId } },
-      update: { title, startTime, endTime, location, description, updatedAt: new Date() },
-      create: { userId, googleEventId, title, startTime, endTime, location, description },
-    });
+    console.log(`[GCalSync] Upserting event "${title}" (${googleEventId}) startTime=${startTime.toISOString()}`);
+    try {
+      await prisma.calendarEvent.upsert({
+        where: { userId_googleEventId: { userId, googleEventId } },
+        update: { title, startTime, endTime, location, description, updatedAt: new Date() },
+        create: { userId, googleEventId, title, startTime, endTime, location, description },
+      });
+      saved++;
+    } catch (e) {
+      console.error(`[GCalSync] Failed to upsert event "${title}" (${googleEventId}):`, e.message);
+    }
   }
+
+  console.log(`[GCalSync] Saved ${saved}/${items.length} events for user ${userId}`);
 
   // Remove stale events that no longer appear in the next 7 days from Google
   const activeIds = items.map(e => e.id);
-  await prisma.calendarEvent.deleteMany({
+  const deleted = await prisma.calendarEvent.deleteMany({
     where: {
       userId,
       startTime: { gte: now, lte: in7Days },
       googleEventId: { notIn: activeIds },
     },
   });
+  if (deleted.count > 0) {
+    console.log(`[GCalSync] Removed ${deleted.count} stale events for user ${userId}`);
+  }
 
   return items.length;
 }
