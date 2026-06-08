@@ -90,7 +90,7 @@ function Sidebar({ classes, activeTab, onTabChange }) {
   return (
     <nav style={{
       position: 'fixed', left: 0, top: 0, width: 210, height: '100vh',
-      background: 'var(--surface-side)', borderRight: '2px solid rgba(20, 90, 50, 0.85)',
+      background: 'var(--surface-side)', borderRight: '2px solid rgba(15, 110, 55, 0.85)',
       display: 'flex', flexDirection: 'column', zIndex: 100, overflowY: 'auto',
     }}>
       <div style={{ padding: '24px 20px 20px' }}>
@@ -113,7 +113,7 @@ function Sidebar({ classes, activeTab, onTabChange }) {
                 width: '100%', display: 'flex', alignItems: 'center', gap: 9,
                 padding: '7px 10px', marginBottom: 2,
                 borderRadius: 8, border: 'none',
-                borderLeft: isActive ? '4px solid rgba(20, 90, 50, 0.9)' : '4px solid transparent',
+                borderLeft: isActive ? '4px solid rgba(15, 110, 55, 0.95)' : '4px solid transparent',
                 cursor: item.disabled ? 'default' : 'pointer',
                 background: isActive ? `color-mix(in srgb, ${ACCENT} 8%, transparent)` : 'transparent',
                 textAlign: 'left', opacity: item.disabled ? 0.4 : 1,
@@ -297,7 +297,7 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
   }
 
   return (
-    <div className="card" style={{ marginBottom: 0, border: '2px solid rgba(20, 90, 50, 0.85)' }}>
+    <div className="card" style={{ marginBottom: 0, border: '2px solid rgba(15, 110, 55, 0.85)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
         <h3 style={{ fontSize: 16, margin: 0 }}>{MONTH_NAMES[month - 1]} {year}</h3>
         <div style={{ display: 'flex', gap: 4 }}>
@@ -578,7 +578,7 @@ function WeekStrip({ weekData, selectedDate, onChipClick, onDayClick, onDifficul
             onClick={() => onDayClick(dayStr)}
             style={{
               background: isSelected ? `color-mix(in srgb, ${ACCENT} 6%, var(--surface))` : 'var(--surface)',
-              border: isToday ? `1px solid ${ACCENT}` : isSelected ? `1px solid color-mix(in srgb, ${ACCENT} 40%, var(--border))` : '2px solid rgba(20, 90, 50, 0.85)',
+              border: isToday ? `1px solid ${ACCENT}` : isSelected ? `1px solid color-mix(in srgb, ${ACCENT} 40%, var(--border))` : '2px solid rgba(15, 110, 55, 0.85)',
               borderRadius: 10, padding: '10px 8px', cursor: 'pointer',
               transition: 'background 150ms',
             }}
@@ -717,7 +717,7 @@ function TodaysFocusCard({ weekData, todayTasks, onToggleComplete, onToggleDayTa
   const hasContent = focused.length > 0 || todayTasks.length > 0
 
   return (
-    <div className="card" style={{ marginBottom: 16, border: '2px solid rgba(20, 90, 50, 0.85)' }}>
+    <div className="card" style={{ marginBottom: 16, border: '2px solid rgba(15, 110, 55, 0.85)' }}>
       <h3 style={{ fontSize: 15, margin: '0 0 14px' }}>Today's Focus</h3>
 
       {!hasContent && !showInput && (
@@ -816,7 +816,7 @@ function TodaysFocusCard({ weekData, todayTasks, onToggleComplete, onToggleDayTa
 function SyllabusStatusCard({ classes, syllabusStatus }) {
   const navigate = useNavigate()
   return (
-    <div className="card" style={{ marginBottom: 16 }}>
+    <div className="card" style={{ marginBottom: 16, border: '2px solid rgba(175, 120, 15, 0.85)' }}>
       <h3 style={{ fontSize: 15, margin: '0 0 14px' }}>Syllabus</h3>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
         {classes.map(cls => {
@@ -960,7 +960,7 @@ function ConnectToolsSection({ gcalConnected, onGcalDisconnect, token }) {
               <div style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6,
                 padding: '7px 14px', borderRadius: 8,
-                background: 'rgba(46,158,104,0.10)', border: '1px solid rgba(46,158,104,0.3)',
+                background: 'rgba(46,158,104,0.10)', border: '2px solid rgba(15, 110, 55, 0.85)',
               }}>
                 <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
                   <circle cx="6.5" cy="6.5" r="6.5" fill="#2E9E68"/>
@@ -989,7 +989,7 @@ function ConnectToolsSection({ gcalConnected, onGcalDisconnect, token }) {
               onClick={() => { window.location.href = `/api/google/auth?token=${token}` }}
               style={{
                 marginTop: 6,
-                padding: '8px 20px', borderRadius: 8, border: 'none',
+                padding: '8px 20px', borderRadius: 8, border: '2px solid rgba(15, 110, 55, 0.85)',
                 background: '#2E9E68', color: '#fff',
                 fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 600,
                 cursor: 'pointer',
@@ -1029,7 +1029,7 @@ function ConnectToolsSection({ gcalConnected, onGcalDisconnect, token }) {
             style={{
               marginTop: 6,
               padding: '8px 20px', borderRadius: 8,
-              border: '1px solid var(--border)', background: 'var(--bg)',
+              border: '1px solid rgba(175, 120, 15, 0.85)', background: 'var(--bg)',
               fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 600,
               color: 'var(--text-muted)', cursor: 'not-allowed',
             }}
@@ -1213,7 +1213,7 @@ function GoogleCalendarCard({ events, connected }) {
   return (
     <>
       <div style={{
-        background: 'var(--surface)', border: '2px solid rgba(20, 90, 50, 0.85)',
+        background: 'var(--surface)', border: '2px solid rgba(15, 110, 55, 0.85)',
         borderRadius: 14, padding: '18px 20px', marginBottom: 16,
       }}>
         {/* Header */}
@@ -1318,7 +1318,7 @@ function DashboardTab({
             disabled={checkinLoading}
             style={{
               padding: '8px 16px', borderRadius: 8,
-              border: `1px solid ${ACCENT}`, background: 'transparent',
+              border: '1px solid rgba(175, 120, 15, 0.85)', background: 'transparent',
               color: ACCENT, fontFamily: 'Sora, sans-serif', fontSize: 13,
               fontWeight: 500, cursor: checkinLoading ? 'default' : 'pointer',
               opacity: checkinLoading ? 0.6 : 1,
