@@ -90,7 +90,7 @@ function Sidebar({ classes, activeTab, onTabChange }) {
   return (
     <nav style={{
       position: 'fixed', left: 0, top: 0, width: 210, height: '100vh',
-      background: 'var(--surface)', borderRight: '2px solid rgba(20, 90, 50, 0.85)',
+      background: 'var(--surface-side)', borderRight: '2px solid rgba(20, 90, 50, 0.85)',
       display: 'flex', flexDirection: 'column', zIndex: 100, overflowY: 'auto',
     }}>
       <div style={{ padding: '24px 20px 20px' }}>
@@ -166,24 +166,99 @@ function Sidebar({ classes, activeTab, onTabChange }) {
 }
 
 // ─── Tab bar ──────────────────────────────────────────────────────────────────
+const TAB_GREEN = 'rgba(15, 110, 55, 0.9)'
+const TAB_PILL  = 'rgba(15, 110, 55, 0.12)'
+
 function TabBar({ activeTab, onTabChange }) {
-  const tabs = ['Dashboard', 'Performance', 'Study Plan']
+  const tabs    = ['Dashboard', 'Performance', 'Study Plan']
+  const btnRefs = useRef([])
+  const [pill,  setPill]  = useState({ left: 0, width: 0 })
+  const [ready, setReady] = useState(false)
+
+  // Measure pill position whenever activeTab changes or on mount
+  useEffect(() => {
+    const el = btnRefs.current[activeTab]
+    if (el) {
+      setPill({ left: el.offsetLeft, width: el.offsetWidth })
+      setReady(true)
+    }
+  }, [activeTab])
+
+  // Also measure after first paint so pill starts in the right place
+  useEffect(() => {
+    const el = btnRefs.current[activeTab]
+    if (el) setPill({ left: el.offsetLeft, width: el.offsetWidth })
+    setReady(true)
+  }, [])
+
   return (
     <div style={{
-      display: 'flex', borderBottom: '1px solid var(--border)',
-      background: 'var(--surface)', position: 'sticky', top: 0, zIndex: 50, padding: '0 24px',
+      position: 'sticky', top: 0, zIndex: 50,
+      display: 'flex', alignItems: 'stretch',
+      borderBottom: '1px solid var(--border)',
+      background: 'var(--bg)',
+      padding: '0 24px',
     }}>
+      {/* ── A) Sliding pill ── */}
+      {ready && (
+        <div style={{
+          position: 'absolute',
+          top: 4, bottom: 4,
+          left: pill.left,
+          width: pill.width,
+          background: TAB_PILL,
+          borderRadius: 8,
+          transition: 'left 0.25s ease, width 0.25s ease',
+          pointerEvents: 'none',
+          zIndex: 0,
+        }} />
+      )}
+
       {tabs.map((tab, i) => {
         const isActive = activeTab === i
         return (
-          <button key={i} onClick={() => onTabChange(i)} style={{
-            padding: '14px 16px', border: 'none', background: 'none', cursor: 'pointer',
-            fontSize: 14, fontFamily: 'Sora, sans-serif', fontWeight: isActive ? 600 : 400,
-            color: isActive ? ACCENT : 'var(--text-muted)',
-            borderBottom: isActive ? `2px solid ${ACCENT}` : '2px solid transparent',
-            marginBottom: -1, transition: 'color 150ms',
-          }}>
+          <button
+            key={i}
+            ref={el => { btnRefs.current[i] = el }}
+            onClick={() => onTabChange(i)}
+            style={{
+              position: 'relative',
+              padding: '14px 16px',
+              border: 'none',
+              background: 'none',
+              cursor: 'pointer',
+              fontSize: 14,
+              fontFamily: 'Sora, sans-serif',
+              fontWeight: isActive ? 600 : 400,
+              color: isActive ? ACCENT : 'var(--text-muted)',
+              zIndex: 1,
+              outline: 'none',
+              // ── C) Glow ──
+              animation: isActive ? 'tab-glow-pulse 2.5s ease-in-out infinite' : 'none',
+              boxShadow: isActive ? '0 2px 12px rgba(15, 110, 55, 0.2)' : 'none',
+              borderRadius: 6,
+              transition: 'color 150ms, box-shadow 150ms',
+            }}
+            onMouseEnter={e => {
+              if (!isActive) e.currentTarget.style.boxShadow = '0 2px 8px rgba(15, 110, 55, 0.15)'
+            }}
+            onMouseLeave={e => {
+              if (!isActive) e.currentTarget.style.boxShadow = 'none'
+            }}
+          >
             {tab}
+
+            {/* ── B) Animated underline ── */}
+            <span style={{
+              position: 'absolute',
+              bottom: 0, left: 0,
+              height: 3,
+              width: isActive ? '100%' : '0%',
+              background: TAB_GREEN,
+              borderRadius: '2px 2px 0 0',
+              transition: 'width 0.3s ease',
+              display: 'block',
+            }} />
           </button>
         )
       })}

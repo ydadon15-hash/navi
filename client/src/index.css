@@ -4,8 +4,9 @@
 
 /* ── Design tokens ── */
 :root {
-  --bg:           #F0EDE8;
-  --surface:      #FAF9F7;
+  --bg:           #F5F0E8;
+  --surface:      #FFFFFF;
+  --surface-side: #EDE8DF;
   --border:       #DDD9D1;
   --text:         #26231F;
   --text-muted:   #8C887F;
@@ -37,11 +38,17 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ── Card ── */
 .card {
-  background: var(--surface);
+  background: #FFFFFF;
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 20px;
   /* NO box-shadow — borders only */
+}
+
+/* ── Tab glow pulse ── */
+@keyframes tab-glow-pulse {
+  0%, 100% { box-shadow: 0 2px 12px rgba(15, 110, 55, 0.2); }
+  50%       { box-shadow: 0 2px 18px rgba(15, 110, 55, 0.4); }
 }
 
 /* ── Assignment chip ── */
