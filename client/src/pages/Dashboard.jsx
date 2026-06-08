@@ -90,7 +90,7 @@ function Sidebar({ classes, activeTab, onTabChange }) {
   return (
     <nav style={{
       position: 'fixed', left: 0, top: 0, width: 210, height: '100vh',
-      background: 'var(--surface)', borderRight: '1.5px solid rgba(20, 90, 50, 0.35)',
+      background: 'var(--surface)', borderRight: '2px solid rgba(20, 90, 50, 0.85)',
       display: 'flex', flexDirection: 'column', zIndex: 100, overflowY: 'auto',
     }}>
       <div style={{ padding: '24px 20px 20px' }}>
@@ -113,7 +113,7 @@ function Sidebar({ classes, activeTab, onTabChange }) {
                 width: '100%', display: 'flex', alignItems: 'center', gap: 9,
                 padding: '7px 10px', marginBottom: 2,
                 borderRadius: 8, border: 'none',
-                borderLeft: isActive ? '3px solid rgba(20, 90, 50, 0.6)' : '3px solid transparent',
+                borderLeft: isActive ? '4px solid rgba(20, 90, 50, 0.9)' : '4px solid transparent',
                 cursor: item.disabled ? 'default' : 'pointer',
                 background: isActive ? `color-mix(in srgb, ${ACCENT} 8%, transparent)` : 'transparent',
                 textAlign: 'left', opacity: item.disabled ? 0.4 : 1,
@@ -222,7 +222,7 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
   }
 
   return (
-    <div className="card" style={{ marginBottom: 0, border: '1px solid rgba(20, 90, 50, 0.35)' }}>
+    <div className="card" style={{ marginBottom: 0, border: '2px solid rgba(20, 90, 50, 0.85)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
         <h3 style={{ fontSize: 16, margin: 0 }}>{MONTH_NAMES[month - 1]} {year}</h3>
         <div style={{ display: 'flex', gap: 4 }}>
@@ -503,7 +503,7 @@ function WeekStrip({ weekData, selectedDate, onChipClick, onDayClick, onDifficul
             onClick={() => onDayClick(dayStr)}
             style={{
               background: isSelected ? `color-mix(in srgb, ${ACCENT} 6%, var(--surface))` : 'var(--surface)',
-              border: isToday ? `1px solid ${ACCENT}` : isSelected ? `1px solid color-mix(in srgb, ${ACCENT} 40%, var(--border))` : '1px solid rgba(20, 90, 50, 0.35)',
+              border: isToday ? `1px solid ${ACCENT}` : isSelected ? `1px solid color-mix(in srgb, ${ACCENT} 40%, var(--border))` : '2px solid rgba(20, 90, 50, 0.85)',
               borderRadius: 10, padding: '10px 8px', cursor: 'pointer',
               transition: 'background 150ms',
             }}
@@ -642,7 +642,7 @@ function TodaysFocusCard({ weekData, todayTasks, onToggleComplete, onToggleDayTa
   const hasContent = focused.length > 0 || todayTasks.length > 0
 
   return (
-    <div className="card" style={{ marginBottom: 16, border: '1px solid rgba(20, 90, 50, 0.35)' }}>
+    <div className="card" style={{ marginBottom: 16, border: '2px solid rgba(20, 90, 50, 0.85)' }}>
       <h3 style={{ fontSize: 15, margin: '0 0 14px' }}>Today's Focus</h3>
 
       {!hasContent && !showInput && (
@@ -927,7 +927,7 @@ function ConnectToolsSection({ gcalConnected, onGcalDisconnect, token }) {
         </div>
 
         {/* ── Canvas card ── */}
-        <div style={{ ...cardBase, opacity: 0.72, border: '1px solid rgba(175, 120, 15, 0.35)' }}>
+        <div style={{ ...cardBase, opacity: 0.72, border: '2px solid rgba(175, 120, 15, 0.85)' }}>
           {/* Top-edge colour bar */}
           <div style={{
             position: 'absolute', top: 0, left: 0, right: 0, height: 3,
@@ -1107,7 +1107,7 @@ function GCalEventChip({ event, onClick }) {
         padding: '9px 12px 9px 14px', borderRadius: 9,
         background: colors.bg,
         border: `1px solid ${colors.border}22`,
-        borderLeft: '2px solid rgba(175, 120, 15, 0.6)',
+        borderLeft: '3px solid rgba(175, 120, 15, 0.9)',
         cursor: 'pointer',
         transition: 'transform 0.1s, box-shadow 0.1s',
       }}
@@ -1138,7 +1138,7 @@ function GoogleCalendarCard({ events, connected }) {
   return (
     <>
       <div style={{
-        background: 'var(--surface)', border: '1px solid rgba(20, 90, 50, 0.35)',
+        background: 'var(--surface)', border: '2px solid rgba(20, 90, 50, 0.85)',
         borderRadius: 14, padding: '18px 20px', marginBottom: 16,
       }}>
         {/* Header */}
