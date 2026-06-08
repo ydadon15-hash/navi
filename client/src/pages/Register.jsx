@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { saveAuth } from '../lib/auth'
+import { useToast } from '../lib/ToastContext'
+import PasswordStrengthMeter, { getPasswordStrength } from '../components/PasswordStrengthMeter'
 
 export default function Register() {
   const navigate = useNavigate()
+  const showToast = useToast()
   const [form, setForm] = useState({ name: '', email: '', password: '' })
   const [isStudent, setIsStudent] = useState(true)
   const [error, setError] = useState('')
@@ -14,6 +17,13 @@ export default function Register() {
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
+
+    const { level } = getPasswordStrength(form.password)
+    if (level === 'Weak') {
+      setError('Please choose a stronger password')
+      return
+    }
+
     setLoading(true)
     try {
       const res = await fetch('/api/auth/register', {
@@ -24,6 +34,7 @@ export default function Register() {
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Registration failed'); return }
       saveAuth(data.token, data.user)
+      showToast('Account created! Welcome to Navi.')
       navigate('/onboarding')
     } catch {
       setError('Network error — please try again')
@@ -93,7 +104,8 @@ export default function Register() {
           <div>
             <label style={labelStyle}>Password</label>
             <input style={inputStyle} type="password" value={form.password}
-              onChange={set('password')} placeholder="••••••••" required minLength={6} />
+              onChange={set('password')} placeholder="••••••••" required />
+            <PasswordStrengthMeter password={form.password} />
           </div>
 
           {error && (

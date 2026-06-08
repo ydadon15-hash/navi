@@ -23,6 +23,11 @@ model User {
   trialStartDate     DateTime?
   lastSyncedAt       DateTime?
 
+  resetToken              String?
+  resetTokenExpiry        DateTime?
+  failedLoginAttempts     Int       @default(0)
+  lockUntil               DateTime?
+
   shareToken              String?
   sharingEnabled          Boolean   @default(false)
   notificationPreferences String?

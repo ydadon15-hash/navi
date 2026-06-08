@@ -1,12 +1,22 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { saveAuth } from '../lib/auth'
+import { useToast } from '../lib/ToastContext'
 
 export default function Login() {
   const navigate = useNavigate()
+  const showToast = useToast()
   const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    const msg = sessionStorage.getItem('toast')
+    if (msg) {
+      sessionStorage.removeItem('toast')
+      showToast(msg)
+    }
+  }, [showToast])
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
 
@@ -23,6 +33,7 @@ export default function Login() {
       const data = await res.json()
       if (!res.ok) { setError(data.error || 'Login failed'); return }
       saveAuth(data.token, data.user)
+      showToast(`Welcome back, ${data.user.name.split(' ')[0]}!`)
       navigate('/dashboard')
     } catch {
       setError('Network error — please try again')
@@ -78,6 +89,16 @@ export default function Login() {
             <label style={labelStyle}>Password</label>
             <input style={inputStyle} type="password" value={form.password}
               onChange={set('password')} placeholder="••••••••" required />
+            <div style={{ textAlign: 'right', marginTop: 6 }}>
+              <Link to="/forgot-password" style={{
+                fontFamily: 'Sora, sans-serif',
+                fontSize: 12,
+                color: 'var(--accent)',
+                textDecoration: 'none',
+              }}>
+                Forgot password?
+              </Link>
+            </div>
           </div>
 
           {error && (
