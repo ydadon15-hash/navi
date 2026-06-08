@@ -191,7 +191,7 @@ function TabBar({ activeTab, onTabChange }) {
 }
 
 // ─── Calendar card ────────────────────────────────────────────────────────────
-function CalendarCard({ year, month, assignments, indicators, selectedDate, onSelectDate, onPrev, onNext }) {
+function CalendarCard({ year, month, assignments, indicators, selectedDate, onSelectDate, onPrev, onNext, gcalEvents = [] }) {
   const today = new Date()
   const cells = buildCalGrid(year, month)
   const isCurrentMonth = today.getFullYear() === year && today.getMonth() + 1 === month
@@ -203,6 +203,15 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
     const day = d.getDate()
     if (!dotMap[day]) dotMap[day] = new Set()
     dotMap[day].add(a.class.colorIndex)
+  }
+
+  // Build a set of day-numbers in this month that have gcal events
+  const gcalDaySet = new Set()
+  for (const ev of gcalEvents) {
+    const d = new Date(ev.startTime)
+    if (d.getFullYear() === year && d.getMonth() + 1 === month) {
+      gcalDaySet.add(d.getDate())
+    }
   }
 
   let selDay = null
@@ -237,6 +246,7 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
           const dots       = dotMap[day] ? [...dotMap[day]] : []
           const dateStr    = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`
           const hasPersonal = indicatorSet.has(dateStr)
+          const hasGcal    = gcalDaySet.has(day)
 
           return (
             <div key={i}
@@ -257,9 +267,12 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
                 {day}
               </span>
               <div style={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center', minHeight: 6 }}>
-                {dots.slice(0, 4).map((ci, j) => (
+                {dots.slice(0, 3).map((ci, j) => (
                   <span key={j} style={{ width: 4, height: 4, borderRadius: '50%', background: CLASS_COLORS[ci] || ACCENT, display: 'block', flexShrink: 0 }} />
                 ))}
+                {hasGcal && (
+                  <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'linear-gradient(135deg,#4285F4,#7c3aed)', display: 'block', flexShrink: 0, boxShadow: '0 0 3px rgba(66,133,244,0.6)' }} />
+                )}
                 {hasPersonal && (
                   <span style={{ width: 4, height: 4, borderRadius: 1, background: 'var(--text-muted)', opacity: 0.5, display: 'block', flexShrink: 0 }} />
                 )}
@@ -273,7 +286,7 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
 }
 
 // ─── Day panel ────────────────────────────────────────────────────────────────
-function DayPanel({ date, data, onClose, onNoteSave, onTaskAdd, onTaskComplete, onTaskDelete }) {
+function DayPanel({ date, data, onClose, onNoteSave, onTaskAdd, onTaskComplete, onTaskDelete, gcalEventsForDay = [] }) {
   const [noteText,      setNoteText]      = useState(data.note || '')
   const [savedVisible,  setSavedVisible]  = useState(false)
   const [showTaskInput, setShowTaskInput] = useState(false)
@@ -402,7 +415,31 @@ function DayPanel({ date, data, onClose, onNoteSave, onTaskAdd, onTaskComplete, 
           </button>
         )}
       </div>
+
+      {/* Google Calendar events for this day */}
+      {gcalEventsForDay.length > 0 && (
+        <DayPanelGcalEvents events={gcalEventsForDay} />
+      )}
     </div>
+  )
+}
+
+function DayPanelGcalEvents({ events }) {
+  const [activeEvent, setActiveEvent] = useState(null)
+  return (
+    <>
+      <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--border)' }}>
+        <p style={{ margin: '0 0 10px', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'Sora, sans-serif' }}>
+          Calendar Events
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {events.map(ev => (
+            <GCalEventChip key={ev.id} event={ev} onClick={setActiveEvent} />
+          ))}
+        </div>
+      </div>
+      <EventModal event={activeEvent} onClose={() => setActiveEvent(null)} />
+    </>
   )
 }
 
@@ -931,64 +968,219 @@ function ConnectToolsSection({ gcalConnected, onGcalDisconnect, token }) {
 }
 
 // ─── Google Calendar card ─────────────────────────────────────────────────────
+// ─── Shared gcal helpers ──────────────────────────────────────────────────────
+function gcalEventColor(title = '') {
+  const lower = title.toLowerCase()
+  if (lower.includes('assignment') || lower.includes('due') || lower.includes('submit') || lower.includes('deadline'))
+    return { border: '#E67E22', bg: 'rgba(230,126,34,0.06)', text: '#C0641A' }
+  if (lower.includes('exam') || lower.includes('quiz') || lower.includes('test') || lower.includes('midterm') || lower.includes('final'))
+    return { border: '#e55', bg: 'rgba(229,57,53,0.06)', text: '#c62828' }
+  if (lower.includes('office') || lower.includes('meeting') || lower.includes('review') || lower.includes('session'))
+    return { border: '#2E9E68', bg: 'rgba(46,158,104,0.06)', text: '#1e7a51' }
+  return { border: '#4285F4', bg: 'rgba(66,133,244,0.06)', text: '#1a5fc8' }
+}
+
+function fmtEventTime(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  // All-day events come through as midnight UTC — skip time display
+  if (d.getUTCHours() === 0 && d.getUTCMinutes() === 0 && d.getSeconds() === 0) return ''
+  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+}
+
+function fmtEventDate(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  const today    = new Date()
+  const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1)
+  if (isSameDay(d, today))    return 'Today'
+  if (isSameDay(d, tomorrow)) return 'Tomorrow'
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+}
+
+// ─── Event detail modal ───────────────────────────────────────────────────────
+function EventModal({ event, onClose }) {
+  if (!event) return null
+  const colors = gcalEventColor(event.title)
+  const startTime = fmtEventTime(event.startTime)
+  const dateLabel = fmtEventDate(event.startTime)
+  const endTime   = event.endTime ? fmtEventTime(event.endTime) : ''
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 1000,
+        background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(2px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 24,
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: 'var(--surface)', borderRadius: 16,
+          border: `1px solid var(--border)`,
+          borderTop: `4px solid ${colors.border}`,
+          padding: '28px 28px 24px',
+          width: '100%', maxWidth: 420,
+          boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+        }}
+      >
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{
+              width: 10, height: 10, borderRadius: '50%', flexShrink: 0,
+              background: colors.border,
+            }} />
+            <h3 style={{
+              fontFamily: 'Playfair Display, serif', fontSize: 18,
+              fontWeight: 700, color: 'var(--text)', margin: 0, lineHeight: 1.3,
+            }}>
+              {event.title}
+            </h3>
+          </div>
+          <button onClick={onClose} style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            fontSize: 22, color: 'var(--text-muted)', lineHeight: 1,
+            padding: '0 2px', marginTop: -2, flexShrink: 0,
+          }}>×</button>
+        </div>
+
+        {/* Date / time row */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '10px 14px', borderRadius: 9,
+          background: colors.bg, marginBottom: 14,
+        }}>
+          <span style={{ fontSize: 15 }}>🗓</span>
+          <span style={{ fontFamily: 'Sora, sans-serif', fontSize: 13, color: colors.text, fontWeight: 600 }}>
+            {dateLabel}
+            {startTime ? ` · ${startTime}` : ''}
+            {endTime   ? ` – ${endTime}`   : ''}
+          </span>
+        </div>
+
+        {/* Location */}
+        {event.location && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+            <span style={{ fontSize: 14 }}>📍</span>
+            <span style={{ fontFamily: 'Sora, sans-serif', fontSize: 13, color: 'var(--text-muted)' }}>
+              {event.location}
+            </span>
+          </div>
+        )}
+
+        {/* Description */}
+        {event.description && (
+          <div style={{
+            padding: '12px 14px', borderRadius: 9,
+            background: 'var(--bg)', border: '1px solid var(--border)',
+            marginBottom: 6,
+          }}>
+            <p style={{
+              fontFamily: 'Sora, sans-serif', fontSize: 13,
+              color: 'var(--text)', lineHeight: 1.7, margin: 0,
+              whiteSpace: 'pre-line',
+            }}>
+              {event.description}
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Single styled event chip (reused in sidebar + day panel) ─────────────────
+function GCalEventChip({ event, onClick }) {
+  const colors  = gcalEventColor(event.title)
+  const dateStr = fmtEventDate(event.startTime)
+  const timeStr = fmtEventTime(event.startTime)
+
+  return (
+    <div
+      onClick={() => onClick(event)}
+      style={{
+        padding: '9px 12px 9px 14px', borderRadius: 9,
+        background: colors.bg,
+        borderLeft: `3px solid ${colors.border}`,
+        border: `1px solid ${colors.border}22`,
+        borderLeftWidth: 3,
+        cursor: 'pointer',
+        transition: 'transform 0.1s, box-shadow 0.1s',
+      }}
+      onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = `0 4px 12px ${colors.border}28` }}
+      onMouseOut={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none' }}
+    >
+      <div style={{
+        fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 700,
+        color: 'var(--text)', marginBottom: 3,
+        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+      }}>
+        {event.title}
+      </div>
+      <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 11, color: 'var(--text-muted)' }}>
+        {dateStr}{timeStr ? ` · ${timeStr}` : ''}
+        {event.location ? ` · ${event.location}` : ''}
+      </div>
+    </div>
+  )
+}
+
+// ─── Upcoming Events sidebar card ─────────────────────────────────────────────
 function GoogleCalendarCard({ events, connected }) {
-  function fmtEventTime(iso) {
-    const d = new Date(iso)
-    return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
-  }
-  function fmtEventDate(iso) {
-    const d = new Date(iso)
-    const today = new Date()
-    const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1)
-    if (isSameDay(d, today))    return 'Today'
-    if (isSameDay(d, tomorrow)) return 'Tomorrow'
-    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-  }
+  const [activeEvent, setActiveEvent] = useState(null)
 
   if (!connected) return null
 
   return (
-    <div style={{
-      background: 'var(--surface)', border: '1px solid var(--border)',
-      borderRadius: 14, padding: '18px 20px', marginBottom: 16,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-        <span style={{ fontSize: 16 }}>📅</span>
-        <span style={{ fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 600,
-                        color: 'var(--text)', letterSpacing: '0.01em' }}>
-          Upcoming Events
-        </span>
+    <>
+      <div style={{
+        background: 'var(--surface)', border: '1px solid var(--border)',
+        borderRadius: 14, padding: '18px 20px', marginBottom: 16,
+      }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <rect x="1" y="2" width="14" height="13" rx="2" stroke="#4285F4" strokeWidth="1.4" fill="none"/>
+            <path d="M1 6h14" stroke="#4285F4" strokeWidth="1.4"/>
+            <rect x="4" y="0.5" width="1.5" height="3" rx="0.75" fill="#4285F4"/>
+            <rect x="10.5" y="0.5" width="1.5" height="3" rx="0.75" fill="#4285F4"/>
+          </svg>
+          <span style={{ fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 700,
+                          color: 'var(--text)', letterSpacing: '0.01em' }}>
+            Upcoming Events
+          </span>
+          {events.length > 0 && (
+            <span style={{
+              marginLeft: 'auto', fontSize: 10, fontWeight: 700,
+              fontFamily: 'Sora, sans-serif', color: '#4285F4',
+              background: 'rgba(66,133,244,0.1)', borderRadius: 10,
+              padding: '2px 8px',
+            }}>
+              {events.length}
+            </span>
+          )}
+        </div>
+
+        {events.length === 0 ? (
+          <p style={{ fontFamily: 'Sora, sans-serif', fontSize: 12, color: 'var(--text-muted)',
+                       margin: 0, textAlign: 'center', padding: '10px 0' }}>
+            No events in the next 7 days.
+          </p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+            {events.map(ev => (
+              <GCalEventChip key={ev.id} event={ev} onClick={setActiveEvent} />
+            ))}
+          </div>
+        )}
       </div>
 
-      {events.length === 0 ? (
-        <p style={{ fontFamily: 'Sora, sans-serif', fontSize: 12, color: 'var(--text-muted)',
-                     margin: 0, textAlign: 'center', padding: '10px 0' }}>
-          No events in the next 7 days.
-        </p>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {events.map(ev => (
-            <div key={ev.id} style={{
-              padding: '9px 12px', borderRadius: 9,
-              background: 'var(--bg)', border: '1px solid var(--border)',
-            }}>
-              <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 500,
-                             color: 'var(--text)', marginBottom: 3,
-                             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {ev.title}
-              </div>
-              <div style={{ fontFamily: 'Sora, sans-serif', fontSize: 11, color: 'var(--text-muted)' }}>
-                {fmtEventDate(ev.startTime)}
-                {ev.startTime && !ev.startTime.endsWith('T00:00:00.000Z')
-                  ? ` · ${fmtEventTime(ev.startTime)}`
-                  : ''}
-                {ev.location ? ` · ${ev.location}` : ''}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+      <EventModal event={activeEvent} onClose={() => setActiveEvent(null)} />
+    </>
   )
 }
 
@@ -1120,6 +1312,7 @@ function DashboardTab({
                 selectedDate={selectedDate}
                 onSelectDate={onSelectDate}
                 onPrev={onCalPrev} onNext={onCalNext}
+                gcalEvents={gcalEvents}
               />
             </div>
             {selectedDate && dayData && (
@@ -1132,6 +1325,10 @@ function DashboardTab({
                   onTaskAdd={onDayTaskAdd}
                   onTaskComplete={onDayTaskComplete}
                   onTaskDelete={onDayTaskDelete}
+                  gcalEventsForDay={gcalEvents.filter(ev => {
+                    const d = new Date(ev.startTime)
+                    return dateToStr(d) === selectedDate
+                  })}
                 />
               </div>
             )}
