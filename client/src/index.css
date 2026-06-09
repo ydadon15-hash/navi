@@ -10,6 +10,8 @@
   --navi-border:       #DDD9D1;
   --text:              #26231F;
   --text-muted:        #8C887F;
+  --navi-text:         #26231F;
+  --navi-text-muted:   #8C887F;
   --hover-faint:       #E8E4DC;
   --navi-accent:       #3A7BD5;
   --gold:              #C8952A;
@@ -41,7 +43,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ── Card ── */
 .card {
-  background: #FFFFFF;
+  background: var(--surface, #FFFFFF);
   border: 1px var(--navi-border-style, solid) var(--navi-border);
   border-radius: var(--navi-card-radius, 12px);
   padding: 20px;
@@ -52,6 +54,12 @@ h1, h2, h3, h4, h5, h6 {
 @keyframes tab-glow-pulse {
   0%, 100% { box-shadow: 0 2px 12px rgba(15, 110, 55, 0.2); }
   50%       { box-shadow: 0 2px 18px rgba(15, 110, 55, 0.4); }
+}
+
+/* ── Customize button pulse ── */
+@keyframes customize-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(45, 90, 61, 0.55); }
+  50%       { box-shadow: 0 0 0 7px rgba(45, 90, 61, 0); }
 }
 
 /* ── Assignment chip ── */

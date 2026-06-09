@@ -14,9 +14,9 @@ const PRESETS = [
     textColor: '#1A2942', textMuted: '#5A7090', surface: '#FFFFFF', surfaceSide: '#D8E5F5',
   },
   {
-    name: 'Midnight',
-    bgColor: '#1C1C1E', borderColor: '#555555', accentColor: '#A0A0A0',
-    textColor: '#E8E8E8', textMuted: '#888888', surface: '#2C2C2E', surfaceSide: '#252527',
+    name: 'Dark Mode',
+    bgColor: '#1A1A2E', borderColor: '#4A90D9', accentColor: '#4A90D9',
+    textColor: '#E8E8E8', textMuted: '#A0A0B0', surface: '#16213E', surfaceSide: '#12122A',
   },
   {
     name: 'Sand',
@@ -43,13 +43,16 @@ const DEFAULTS = {
 // ─── CSS variable helpers ─────────────────────────────────────────────────────
 function applyFullPreset(preset) {
   const r = document.documentElement.style
-  r.setProperty('--navi-bg',      preset.bgColor)
-  r.setProperty('--surface',      preset.surface)
-  r.setProperty('--surface-side', preset.surfaceSide)
-  r.setProperty('--navi-border',  preset.borderColor)
-  r.setProperty('--navi-accent',  preset.accentColor)
-  r.setProperty('--text',         preset.textColor)
-  r.setProperty('--text-muted',   preset.textMuted)
+  r.setProperty('--navi-bg',          preset.bgColor)
+  r.setProperty('--surface',          preset.surface)
+  r.setProperty('--surface-side',     preset.surfaceSide)
+  r.setProperty('--navi-border',      preset.borderColor)
+  r.setProperty('--navi-accent',      preset.accentColor)
+  // Text colors — set both the legacy vars and the --navi-* variants
+  r.setProperty('--text',             preset.textColor)
+  r.setProperty('--text-muted',       preset.textMuted)
+  r.setProperty('--navi-text',        preset.textColor)
+  r.setProperty('--navi-text-muted',  preset.textMuted)
 }
 
 function applyColors({ bgColor, borderColor, accentColor }) {

@@ -264,32 +264,38 @@ function TabBar({ activeTab, onTabChange, onOpenCustomize }) {
         )
       })}
 
-      {/* ── Paintbrush / Customize button ── */}
+      {/* ── Customize button ── */}
       <button
         onClick={onOpenCustomize}
         title="Customize theme"
         style={{
           marginLeft: 'auto',
           alignSelf: 'center',
-          padding: '6px 10px',
-          border: '1px solid var(--navi-border)',
-          borderRadius: 8,
-          background: 'transparent',
+          padding: '7px 14px',
+          border: '1.5px solid var(--navi-accent)',
+          borderRadius: 20,
+          background: 'color-mix(in srgb, var(--navi-accent) 10%, transparent)',
           cursor: 'pointer',
-          color: 'var(--text-muted)',
+          color: 'var(--navi-accent)',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'color 0.15s, border-color 0.15s',
+          gap: 6,
+          fontFamily: 'Sora, sans-serif',
+          fontSize: 12,
+          fontWeight: 600,
+          letterSpacing: '0.02em',
+          animation: 'customize-pulse 2.5s ease-in-out infinite',
+          transition: 'background 0.15s, transform 0.15s',
         }}
-        onMouseEnter={e => { e.currentTarget.style.color = ACCENT; e.currentTarget.style.borderColor = ACCENT }}
-        onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.borderColor = 'var(--navi-border)' }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'color-mix(in srgb, var(--navi-accent) 18%, transparent)'; e.currentTarget.style.transform = 'scale(1.04)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'color-mix(in srgb, var(--navi-accent) 10%, transparent)'; e.currentTarget.style.transform = 'scale(1)' }}
       >
-        <svg width="15" height="15" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M3 17c0-1.1.9-2 2-2h1.5l8.3-8.3a2.1 2.1 0 0 0-3-3L3.5 12V13.5A2 2 0 0 0 3 17z"
-                stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
           <circle cx="5" cy="17" r="1" fill="currentColor"/>
         </svg>
+        Customize
       </button>
     </div>
   )
