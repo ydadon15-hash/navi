@@ -4,18 +4,18 @@
 
 /* ── Design tokens ── */
 :root {
-  --bg:           #F5F0E8;
-  --surface:      #FFFFFF;
-  --surface-side: #EDE8DF;
-  --border:       #DDD9D1;
-  --text:         #26231F;
-  --text-muted:   #8C887F;
-  --hover-faint:  #E8E4DC;
-  --accent:       #3A7BD5;
-  --gold:         #C8952A;
+  --navi-bg:           #F5F0E8;
+  --surface:           #FFFFFF;
+  --surface-side:      #EDE8DF;
+  --navi-border:       #DDD9D1;
+  --text:              #26231F;
+  --text-muted:        #8C887F;
+  --hover-faint:       #E8E4DC;
+  --navi-accent:       #3A7BD5;
+  --gold:              #C8952A;
 
-  --border-style: solid;
-  --card-radius:  12px;
+  --navi-border-style: solid;
+  --navi-card-radius:  12px;
 
   --class-1: #3A7BD5;   /* blue       */
   --class-2: #D4622A;   /* terracotta */
@@ -28,7 +28,7 @@
 
 body {
   font-family: 'Sora', sans-serif;
-  background-color: var(--bg);
+  background-color: var(--navi-bg);
   color: var(--text);
   margin: 0;
 }
@@ -42,8 +42,8 @@ h1, h2, h3, h4, h5, h6 {
 /* ── Card ── */
 .card {
   background: #FFFFFF;
-  border: 1px var(--border-style, solid) var(--border);
-  border-radius: var(--card-radius, 12px);
+  border: 1px var(--navi-border-style, solid) var(--navi-border);
+  border-radius: var(--navi-card-radius, 12px);
   padding: 20px;
   /* NO box-shadow — borders only */
 }
@@ -56,8 +56,8 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ── Assignment chip ── */
 .chip {
-  border-left: 3px solid var(--chip-color, var(--accent));
-  background-color: color-mix(in srgb, var(--chip-color, var(--accent)) 10%, transparent);
+  border-left: 3px solid var(--chip-color, var(--navi-accent));
+  background-color: color-mix(in srgb, var(--chip-color, var(--navi-accent)) 10%, transparent);
   border-radius: 6px;
   padding: 6px 10px;
   font-size: 13px;
@@ -68,10 +68,10 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ── Today marker (calendar) ── */
 .today-marker {
-  color: var(--accent);
+  color: var(--navi-accent);
   font-weight: 700;
   text-decoration: underline;
-  text-decoration-color: var(--accent);
+  text-decoration-color: var(--navi-accent);
   text-decoration-thickness: 2.5px;
   text-underline-offset: 3px;
   background: none;  /* absolutely no fill */

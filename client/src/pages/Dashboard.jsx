@@ -5,7 +5,7 @@ import CustomizePanel from '../components/CustomizePanel'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const CLASS_COLORS = { 1: '#3A7BD5', 2: '#D4622A', 3: '#2E9E68', 4: '#8052C8' }
-const ACCENT       = '#3A7BD5'
+const ACCENT       = 'var(--navi-accent)'
 const GOLD         = '#C8952A'
 const TERRACOTTA   = '#C17B5A'
 const GREEN        = '#2E9E68'
@@ -122,7 +122,7 @@ function Sidebar({ classes, activeTab, onTabChange }) {
             >
               <span style={{
                 width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
-                background: isActive ? ACCENT : 'var(--border)',
+                background: isActive ? ACCENT : 'var(--navi-border)',
                 transition: 'background 150ms',
               }} />
               <span style={{
@@ -170,7 +170,7 @@ function Sidebar({ classes, activeTab, onTabChange }) {
 const TAB_GREEN = 'rgba(15, 110, 55, 0.9)'
 const TAB_PILL  = 'rgba(15, 110, 55, 0.12)'
 
-function TabBar({ activeTab, onTabChange }) {
+function TabBar({ activeTab, onTabChange, onOpenCustomize }) {
   const tabs    = ['Dashboard', 'Performance', 'Study Plan']
   const btnRefs = useRef([])
   const [pill,  setPill]  = useState({ left: 0, width: 0 })
@@ -196,8 +196,8 @@ function TabBar({ activeTab, onTabChange }) {
     <div style={{
       position: 'sticky', top: 0, zIndex: 50,
       display: 'flex', alignItems: 'stretch',
-      borderBottom: '1px solid var(--border)',
-      background: 'var(--bg)',
+      borderBottom: '1px solid var(--navi-border)',
+      background: 'var(--navi-bg)',
       padding: '0 24px',
     }}>
       {/* ── A) Sliding pill ── */}
@@ -263,6 +263,34 @@ function TabBar({ activeTab, onTabChange }) {
           </button>
         )
       })}
+
+      {/* ── Paintbrush / Customize button ── */}
+      <button
+        onClick={onOpenCustomize}
+        title="Customize theme"
+        style={{
+          marginLeft: 'auto',
+          alignSelf: 'center',
+          padding: '6px 10px',
+          border: '1px solid var(--navi-border)',
+          borderRadius: 8,
+          background: 'transparent',
+          cursor: 'pointer',
+          color: 'var(--text-muted)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'color 0.15s, border-color 0.15s',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.color = ACCENT; e.currentTarget.style.borderColor = ACCENT }}
+        onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.borderColor = 'var(--navi-border)' }}
+      >
+        <svg width="15" height="15" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 17c0-1.1.9-2 2-2h1.5l8.3-8.3a2.1 2.1 0 0 0-3-3L3.5 12V13.5A2 2 0 0 0 3 17z"
+                stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx="5" cy="17" r="1" fill="currentColor"/>
+        </svg>
+      </button>
     </div>
   )
 }
@@ -302,8 +330,8 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
         <h3 style={{ fontSize: 16, margin: 0 }}>{MONTH_NAMES[month - 1]} {year}</h3>
         <div style={{ display: 'flex', gap: 4 }}>
-          <button onClick={onPrev} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 6, width: 28, height: 28, cursor: 'pointer', fontSize: 15, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>‹</button>
-          <button onClick={onNext} style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 6, width: 28, height: 28, cursor: 'pointer', fontSize: 15, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>›</button>
+          <button onClick={onPrev} style={{ background: 'none', border: '1px solid var(--navi-border)', borderRadius: 6, width: 28, height: 28, cursor: 'pointer', fontSize: 15, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>‹</button>
+          <button onClick={onNext} style={{ background: 'none', border: '1px solid var(--navi-border)', borderRadius: 6, width: 28, height: 28, cursor: 'pointer', fontSize: 15, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>›</button>
         </div>
       </div>
 
@@ -398,7 +426,7 @@ function DayPanel({ date, data, onClose, onNoteSave, onTaskAdd, onTaskComplete, 
 
   return (
     <div style={{
-      background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12,
+      background: 'var(--surface)', border: '1px solid var(--navi-border)', borderRadius: 12,
       padding: '16px', display: 'flex', flexDirection: 'column', gap: 0,
       maxHeight: 480, overflowY: 'auto',
     }}>
@@ -433,7 +461,7 @@ function DayPanel({ date, data, onClose, onNoteSave, onTaskAdd, onTaskComplete, 
           rows={3}
           style={{
             width: '100%', boxSizing: 'border-box', padding: '8px 10px',
-            borderRadius: 7, border: '1.5px solid var(--border)', background: 'var(--bg)',
+            borderRadius: 7, border: '1.5px solid var(--navi-border)', background: 'var(--navi-bg)',
             fontFamily: 'Sora, sans-serif', fontSize: 12, color: 'var(--text)',
             resize: 'vertical', lineHeight: 1.5, outline: 'none',
           }}
@@ -450,7 +478,7 @@ function DayPanel({ date, data, onClose, onNoteSave, onTaskAdd, onTaskComplete, 
               style={{
                 width: 18, height: 18, borderRadius: 4, flexShrink: 0, cursor: 'pointer',
                 background: t.isCompleted ? ACCENT : 'transparent',
-                border: t.isCompleted ? 'none' : '1.5px solid var(--border)',
+                border: t.isCompleted ? 'none' : '1.5px solid var(--navi-border)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}
             >
@@ -478,7 +506,7 @@ function DayPanel({ date, data, onClose, onNoteSave, onTaskAdd, onTaskComplete, 
               placeholder="Task name…"
               style={{
                 flex: 1, padding: '5px 8px', borderRadius: 6, border: `1.5px solid ${ACCENT}`,
-                fontFamily: 'Sora, sans-serif', fontSize: 12, color: 'var(--text)', background: 'var(--bg)', outline: 'none',
+                fontFamily: 'Sora, sans-serif', fontSize: 12, color: 'var(--text)', background: 'var(--navi-bg)', outline: 'none',
               }}
             />
             <button onClick={handleAddTask} style={{ padding: '4px 10px', borderRadius: 6, border: 'none', background: ACCENT, color: '#fff', fontSize: 12, cursor: 'pointer', fontFamily: 'Sora, sans-serif' }}>Add</button>
@@ -505,7 +533,7 @@ function DayPanelGcalEvents({ events }) {
   const [activeEvent, setActiveEvent] = useState(null)
   return (
     <>
-      <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--border)' }}>
+      <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--navi-border)' }}>
         <p style={{ margin: '0 0 10px', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'Sora, sans-serif' }}>
           Calendar Events
         </p>
@@ -547,13 +575,13 @@ function NotePopup({ assignment, onClose, onSave }) {
           rows={4}
           style={{
             width: '100%', boxSizing: 'border-box', padding: '10px 12px',
-            borderRadius: 8, border: '1.5px solid var(--border)', background: 'var(--bg)',
+            borderRadius: 8, border: '1.5px solid var(--navi-border)', background: 'var(--navi-bg)',
             fontFamily: 'Sora, sans-serif', fontSize: 13, color: 'var(--text)',
             resize: 'vertical', lineHeight: 1.5, outline: 'none',
           }}
         />
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 14 }}>
-          <button onClick={onClose} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'none', cursor: 'pointer', fontFamily: 'Sora, sans-serif', fontSize: 13, color: 'var(--text)' }}>Cancel</button>
+          <button onClick={onClose} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--navi-border)', background: 'none', cursor: 'pointer', fontFamily: 'Sora, sans-serif', fontSize: 13, color: 'var(--text)' }}>Cancel</button>
           <button onClick={() => onSave(assignment.id, text)} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: ACCENT, cursor: 'pointer', fontFamily: 'Sora, sans-serif', fontSize: 13, color: '#fff', fontWeight: 600 }}>Save</button>
         </div>
       </div>
@@ -579,7 +607,7 @@ function WeekStrip({ weekData, selectedDate, onChipClick, onDayClick, onDifficul
             onClick={() => onDayClick(dayStr)}
             style={{
               background: isSelected ? `color-mix(in srgb, ${ACCENT} 6%, var(--surface))` : 'var(--surface)',
-              border: isToday ? `1px solid ${ACCENT}` : isSelected ? `1px solid color-mix(in srgb, ${ACCENT} 40%, var(--border))` : '2px solid rgba(15, 110, 55, 0.85)',
+              border: isToday ? `1px solid ${ACCENT}` : isSelected ? `1px solid color-mix(in srgb, ${ACCENT} 40%, var(--navi-border))` : '2px solid rgba(15, 110, 55, 0.85)',
               borderRadius: 10, padding: '10px 8px', cursor: 'pointer',
               transition: 'background 150ms',
             }}
@@ -640,7 +668,7 @@ function WeekStrip({ weekData, selectedDate, onChipClick, onDayClick, onDifficul
                         fontFamily: 'Sora, sans-serif',
                         padding: '2px 6px',
                         borderRadius: 99,
-                        background: diffStyles[diff]?.bg || 'var(--border)',
+                        background: diffStyles[diff]?.bg || 'var(--navi-border)',
                         color: diffStyles[diff]?.color || 'var(--text-muted)',
                         textTransform: 'capitalize',
                       }}>
@@ -674,7 +702,7 @@ function ProgressGrid({ classes, weekData }) {
             <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 600, color, fontFamily: 'Sora, sans-serif', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {cls.name}
             </p>
-            <div style={{ height: 5, background: 'var(--border)', borderRadius: 99, overflow: 'hidden', marginBottom: 6 }}>
+            <div style={{ height: 5, background: 'var(--navi-border)', borderRadius: 99, overflow: 'hidden', marginBottom: 6 }}>
               <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: 99, transition: 'width 600ms ease' }} />
             </div>
             <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif' }}>
@@ -741,7 +769,7 @@ function TodaysFocusCard({ weekData, todayTasks, onToggleComplete, onToggleDayTa
                   </p>
                 </div>
                 <button onClick={() => onToggleComplete(a.id)}
-                  style={{ width: 22, height: 22, borderRadius: 5, flexShrink: 0, border: '1.5px solid var(--border)', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  style={{ width: 22, height: 22, borderRadius: 5, flexShrink: 0, border: '1.5px solid var(--navi-border)', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ opacity: 0.3 }}>
                     <path d="M2 6l3 3 5-5" stroke="var(--text)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
@@ -756,11 +784,11 @@ function TodaysFocusCard({ weekData, todayTasks, onToggleComplete, onToggleDayTa
       {todayTasks.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10 }}>
           {todayTasks.map(t => (
-            <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 10, borderLeft: '3px solid var(--border)', paddingLeft: 10 }}>
+            <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 10, borderLeft: '3px solid var(--navi-border)', paddingLeft: 10 }}>
               <button onClick={() => onToggleDayTask(t.id)}
                 style={{
                   width: 20, height: 20, borderRadius: 4, flexShrink: 0, cursor: 'pointer',
-                  border: t.isCompleted ? 'none' : '1.5px solid var(--border)',
+                  border: t.isCompleted ? 'none' : '1.5px solid var(--navi-border)',
                   background: t.isCompleted ? ACCENT : 'transparent',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}
@@ -796,7 +824,7 @@ function TodaysFocusCard({ weekData, todayTasks, onToggleComplete, onToggleDayTa
             placeholder="Task name…"
             style={{
               flex: 1, padding: '6px 10px', borderRadius: 7, border: `1.5px solid ${ACCENT}`,
-              fontFamily: 'Sora, sans-serif', fontSize: 13, color: 'var(--text)', background: 'var(--bg)', outline: 'none',
+              fontFamily: 'Sora, sans-serif', fontSize: 13, color: 'var(--text)', background: 'var(--navi-bg)', outline: 'none',
             }}
           />
           <button onClick={handleAdd} style={{ padding: '5px 12px', borderRadius: 7, border: 'none', background: ACCENT, color: '#fff', fontSize: 13, cursor: 'pointer', fontFamily: 'Sora, sans-serif', fontWeight: 500 }}>Add</button>
@@ -904,7 +932,7 @@ function ConnectToolsSection({ gcalConnected, onGcalDisconnect, token }) {
   const cardBase = {
     flex: 1,
     background: 'var(--surface)',
-    border: '1px solid var(--border)',
+    border: '1px solid var(--navi-border)',
     borderRadius: 16,
     padding: '24px 22px',
     display: 'flex',
@@ -931,7 +959,7 @@ function ConnectToolsSection({ gcalConnected, onGcalDisconnect, token }) {
         {/* ── Google Calendar card ── */}
         <div style={{
           ...cardBase,
-          borderColor: gcalConnected ? 'rgba(46,158,104,0.4)' : 'var(--border)',
+          borderColor: gcalConnected ? 'rgba(46,158,104,0.4)' : 'var(--navi-border)',
           boxShadow: gcalConnected ? '0 0 0 0 transparent' : 'none',
         }}>
           {/* Subtle top-edge colour bar */}
@@ -974,13 +1002,13 @@ function ConnectToolsSection({ gcalConnected, onGcalDisconnect, token }) {
                 onClick={onGcalDisconnect}
                 style={{
                   padding: '7px 12px', borderRadius: 8, cursor: 'pointer',
-                  background: 'transparent', border: '1px solid var(--border)',
+                  background: 'transparent', border: '1px solid var(--navi-border)',
                   fontFamily: 'Sora, sans-serif', fontSize: 12,
                   color: 'var(--text-muted)', fontWeight: 500,
                   transition: 'border-color 0.15s, color 0.15s',
                 }}
                 onMouseOver={e => { e.currentTarget.style.borderColor = '#e55'; e.currentTarget.style.color = '#e55' }}
-                onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)' }}
+                onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--navi-border)'; e.currentTarget.style.color = 'var(--text-muted)' }}
               >
                 Disconnect
               </button>
@@ -1030,7 +1058,7 @@ function ConnectToolsSection({ gcalConnected, onGcalDisconnect, token }) {
             style={{
               marginTop: 6,
               padding: '8px 20px', borderRadius: 8,
-              border: '1px solid rgba(175, 120, 15, 0.85)', background: 'var(--bg)',
+              border: '1px solid rgba(175, 120, 15, 0.85)', background: 'var(--navi-bg)',
               fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 600,
               color: 'var(--text-muted)', cursor: 'not-allowed',
             }}
@@ -1097,7 +1125,7 @@ function EventModal({ event, onClose }) {
         onClick={e => e.stopPropagation()}
         style={{
           background: 'var(--surface)', borderRadius: 16,
-          border: `1px solid var(--border)`,
+          border: `1px solid var(--navi-border)`,
           borderTop: `4px solid ${colors.border}`,
           padding: '28px 28px 24px',
           width: '100%', maxWidth: 420,
@@ -1153,7 +1181,7 @@ function EventModal({ event, onClose }) {
         {event.description && (
           <div style={{
             padding: '12px 14px', borderRadius: 9,
-            background: 'var(--bg)', border: '1px solid var(--border)',
+            background: 'var(--navi-bg)', border: '1px solid var(--navi-border)',
             marginBottom: 6,
           }}>
             <p style={{
@@ -1262,7 +1290,7 @@ function GoogleCalendarCard({ events, connected }) {
 
 // ─── Dashboard tab content ────────────────────────────────────────────────────
 function DashboardTab({
-  greetingName, onOpenCustomize,
+  greetingName,
   classes, weekData, monthAssignments, monthIndicators,
   calYear, calMonth, onCalPrev, onCalNext,
   syllabusStatus, syllabusData, rolledOverByClass, canvasStatus,
@@ -1314,19 +1342,6 @@ function DashboardTab({
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
-          {/* Customize button */}
-          <button
-            onClick={onOpenCustomize}
-            title="Customize theme"
-            style={{
-              padding: '8px 12px', borderRadius: 8,
-              border: '1px solid var(--border)', background: 'transparent',
-              color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif', fontSize: 18,
-              cursor: 'pointer', lineHeight: 1, display: 'flex', alignItems: 'center',
-            }}
-          >
-            🎨
-          </button>
           {/* Am I on track button */}
           <button
             onClick={handleOnTrack}
@@ -1352,7 +1367,7 @@ function DashboardTab({
           padding: '14px 18px',
           background: 'var(--surface)',
           borderRadius: 10,
-          border: `1px solid var(--border)`,
+          border: `1px solid var(--navi-border)`,
           borderLeftColor: ACCENT,
           borderLeftWidth: 3,
           position: 'relative',
@@ -1463,7 +1478,7 @@ function SpotlightCard({ type, cls }) {
   const isStrongest = type === 'strongest'
   return (
     <div style={{
-      background: 'var(--surface)', border: '1px solid var(--border)',
+      background: 'var(--surface)', border: '1px solid var(--navi-border)',
       borderLeft: `4px solid ${color}`, borderRadius: 12, padding: '18px 20px',
     }}>
       <p style={{ margin: '0 0 6px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'Sora, sans-serif' }}>
@@ -1615,7 +1630,7 @@ function PerformanceTab() {
               </div>
 
               {/* Progress bar */}
-              <div style={{ height: 5, background: 'var(--border)', borderRadius: 99, overflow: 'hidden', marginBottom: 18 }}>
+              <div style={{ height: 5, background: 'var(--navi-border)', borderRadius: 99, overflow: 'hidden', marginBottom: 18 }}>
                 <div style={{ height: '100%', width: `${Math.min(pct, 100)}%`, background: color, borderRadius: 99, transition: 'width 600ms ease' }} />
               </div>
 
@@ -1635,7 +1650,7 @@ function PerformanceTab() {
                 <p style={{ margin: '0 0 6px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'Sora, sans-serif' }}>
                   What You Need
                 </p>
-                <div style={{ background: 'var(--bg)', borderRadius: 8, padding: '10px 12px', border: '1px solid var(--border)' }}>
+                <div style={{ background: 'var(--navi-bg)', borderRadius: 8, padding: '10px 12px', border: '1px solid var(--navi-border)' }}>
                   {needed === null ? (
                     <p style={{ margin: 0, fontSize: 13, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif' }}>
                       No graded assignments to calculate from yet.
@@ -1919,7 +1934,7 @@ function StudyPlanUnlocked({ classes, canvasStatus, syllabusStatus, lastSyncedAt
 
         <div className="card" style={{ marginBottom: 20, padding: '16px 20px' }}>
           {/* Canvas row */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 14, borderBottom: '1px solid var(--border)', marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 14, borderBottom: '1px solid var(--navi-border)', marginBottom: 14 }}>
             {canvasStatus.isConnected ? (
               <>
                 <span style={{ fontSize: 16 }}>✅</span>
@@ -1946,7 +1961,7 @@ function StudyPlanUnlocked({ classes, canvasStatus, syllabusStatus, lastSyncedAt
                 display: 'flex', alignItems: 'center', gap: 12,
                 paddingBottom: i < classes.length - 1 ? 12 : 0,
                 marginBottom: i < classes.length - 1 ? 12 : 0,
-                borderBottom: i < classes.length - 1 ? '1px solid var(--border)' : 'none',
+                borderBottom: i < classes.length - 1 ? '1px solid var(--navi-border)' : 'none',
               }}>
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: CLASS_COLORS[cls.colorIndex] || ACCENT, flexShrink: 0 }} />
                 <span style={{ flex: 1, fontSize: 13, fontFamily: 'Sora, sans-serif', color: 'var(--text)' }}>{cls.name}</span>
@@ -2061,7 +2076,7 @@ function StudyPlanUnlocked({ classes, canvasStatus, syllabusStatus, lastSyncedAt
         </div>
         <button onClick={handleGenerate} style={{
           fontSize: 12, color: 'var(--text-muted)', background: 'none',
-          border: '1px solid var(--border)', borderRadius: 7, padding: '5px 12px',
+          border: '1px solid var(--navi-border)', borderRadius: 7, padding: '5px 12px',
           cursor: 'pointer', fontFamily: 'Sora, sans-serif',
         }}>
           ↺ Regenerate plan
@@ -2090,7 +2105,7 @@ function StudyPlanUnlocked({ classes, canvasStatus, syllabusStatus, lastSyncedAt
               return (
                 <div key={item.taskId} style={{
                   padding: '12px 16px',
-                  borderTop: idx > 0 ? '1px solid var(--border)' : 'none',
+                  borderTop: idx > 0 ? '1px solid var(--navi-border)' : 'none',
                   display: 'flex', alignItems: 'center', gap: 10,
                 }}>
                   <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
@@ -2106,7 +2121,7 @@ function StudyPlanUnlocked({ classes, canvasStatus, syllabusStatus, lastSyncedAt
                     onClick={() => handlePushTomorrow(item.taskId)}
                     style={{
                       fontSize: 11, color: 'var(--text-muted)', background: 'none',
-                      border: '1px solid var(--border)', borderRadius: 6, padding: '3px 8px',
+                      border: '1px solid var(--navi-border)', borderRadius: 6, padding: '3px 8px',
                       cursor: 'pointer', fontFamily: 'Sora, sans-serif', whiteSpace: 'nowrap', flexShrink: 0,
                     }}
                   >
@@ -2116,7 +2131,7 @@ function StudyPlanUnlocked({ classes, canvasStatus, syllabusStatus, lastSyncedAt
                     onClick={() => handleToggleTask(item.taskId)}
                     style={{
                       width: 20, height: 20, borderRadius: 4, flexShrink: 0, cursor: 'pointer',
-                      background: 'transparent', border: '1.5px solid var(--border)',
+                      background: 'transparent', border: '1.5px solid var(--navi-border)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}
                     title="Mark complete"
@@ -2136,7 +2151,7 @@ function StudyPlanUnlocked({ classes, canvasStatus, syllabusStatus, lastSyncedAt
       <div className="card" style={{ padding: '4px 0' }}>
         {sortedDays.map((day, di) => (
           <div key={day.id} style={{
-            borderTop: di > 0 ? '1px solid var(--border)' : 'none',
+            borderTop: di > 0 ? '1px solid var(--navi-border)' : 'none',
           }}>
             {/* Exam banners for this day */}
             {(examBanners[day.date] || []).map((banner, bi) => (
@@ -2207,7 +2222,7 @@ function StudyPlanUnlocked({ classes, canvasStatus, syllabusStatus, lastSyncedAt
                           title="Start timer"
                           style={{
                             background: isTimerOpen || isActiveTask ? `color-mix(in srgb, ${ACCENT} 12%, transparent)` : 'none',
-                            border: isTimerOpen || isActiveTask ? `1px solid ${ACCENT}` : '1px solid var(--border)',
+                            border: isTimerOpen || isActiveTask ? `1px solid ${ACCENT}` : '1px solid var(--navi-border)',
                             borderRadius: 6, width: 28, height: 28, cursor: 'pointer',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             flexShrink: 0, fontSize: 14, color: isActiveTask ? ACCENT : 'var(--text-muted)',
@@ -2271,8 +2286,8 @@ function TimerPanel({ task, activeTimer, onStartFree, onStartFocus, onPause, onS
     return (
       <div style={{
         marginLeft: 18, marginBottom: 8, padding: '12px 14px',
-        background: `color-mix(in srgb, ${ACCENT} 5%, var(--bg))`,
-        border: `1px solid color-mix(in srgb, ${ACCENT} 20%, var(--border))`,
+        background: `color-mix(in srgb, ${ACCENT} 5%, var(--navi-bg))`,
+        border: `1px solid color-mix(in srgb, ${ACCENT} 20%, var(--navi-border))`,
         borderRadius: 9,
       }}>
         {isDone ? (
@@ -2292,7 +2307,7 @@ function TimerPanel({ task, activeTimer, onStartFree, onStartFocus, onPause, onS
             <span style={{ fontSize: 20, fontFamily: 'Sora, sans-serif', fontWeight: 700, color: ACCENT, minWidth: 60 }}>
               {fmtMmSs(timer.elapsed)}
             </span>
-            <button onClick={onPause} style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'none', cursor: 'pointer', fontFamily: 'Sora, sans-serif', color: 'var(--text)' }}>
+            <button onClick={onPause} style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--navi-border)', background: 'none', cursor: 'pointer', fontFamily: 'Sora, sans-serif', color: 'var(--text)' }}>
               {timer.isPaused ? 'Resume' : 'Pause'}
             </button>
             <button onClick={onStop} style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, border: 'none', background: '#C1422A', color: '#fff', cursor: 'pointer', fontFamily: 'Sora, sans-serif' }}>
@@ -2314,7 +2329,7 @@ function TimerPanel({ task, activeTimer, onStartFree, onStartFocus, onPause, onS
               <span style={{ fontSize: 24, fontFamily: 'Sora, sans-serif', fontWeight: 700, color: isPhaseStudy ? ACCENT : GREEN, minWidth: 70 }}>
                 {fmtMmSs(timer.countdown)}
               </span>
-              <button onClick={onPause} style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'none', cursor: 'pointer', fontFamily: 'Sora, sans-serif', color: 'var(--text)' }}>
+              <button onClick={onPause} style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--navi-border)', background: 'none', cursor: 'pointer', fontFamily: 'Sora, sans-serif', color: 'var(--text)' }}>
                 {timer.isPaused ? 'Resume' : 'Pause'}
               </button>
               <button onClick={onStop} style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, border: 'none', background: '#C1422A', color: '#fff', cursor: 'pointer', fontFamily: 'Sora, sans-serif' }}>
@@ -2331,7 +2346,7 @@ function TimerPanel({ task, activeTimer, onStartFree, onStartFocus, onPause, onS
   return (
     <div style={{
       marginLeft: 18, marginBottom: 8, padding: '12px 14px',
-      background: 'var(--bg)', border: '1px solid var(--border)',
+      background: 'var(--navi-bg)', border: '1px solid var(--navi-border)',
       borderRadius: 9,
     }}>
       {/* Mode selector */}
@@ -2345,7 +2360,7 @@ function TimerPanel({ task, activeTimer, onStartFree, onStartFocus, onPause, onS
           </button>
           <button
             onClick={() => setMode('focus')}
-            style={{ fontSize: 12.5, padding: '6px 14px', borderRadius: 7, border: '1px solid var(--border)', background: 'none', color: 'var(--text)', cursor: 'pointer', fontFamily: 'Sora, sans-serif' }}
+            style={{ fontSize: 12.5, padding: '6px 14px', borderRadius: 7, border: '1px solid var(--navi-border)', background: 'none', color: 'var(--text)', cursor: 'pointer', fontFamily: 'Sora, sans-serif' }}
           >
             Focus session
           </button>
@@ -2365,14 +2380,14 @@ function TimerPanel({ task, activeTimer, onStartFree, onStartFocus, onPause, onS
                 <button
                   key={m}
                   onClick={() => setFocusSetup(s => ({ ...s, studyMin: m, customStudy: '' }))}
-                  style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, border: `1px solid ${focusSetup.studyMin === m && !focusSetup.customStudy ? ACCENT : 'var(--border)'}`, background: focusSetup.studyMin === m && !focusSetup.customStudy ? `color-mix(in srgb, ${ACCENT} 10%, transparent)` : 'none', color: focusSetup.studyMin === m && !focusSetup.customStudy ? ACCENT : 'var(--text)', cursor: 'pointer', fontFamily: 'Sora, sans-serif' }}
+                  style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, border: `1px solid ${focusSetup.studyMin === m && !focusSetup.customStudy ? ACCENT : 'var(--navi-border)'}`, background: focusSetup.studyMin === m && !focusSetup.customStudy ? `color-mix(in srgb, ${ACCENT} 10%, transparent)` : 'none', color: focusSetup.studyMin === m && !focusSetup.customStudy ? ACCENT : 'var(--text)', cursor: 'pointer', fontFamily: 'Sora, sans-serif' }}
                 >{m}m</button>
               ))}
               <input
                 placeholder="Custom"
                 value={focusSetup.customStudy}
                 onChange={e => setFocusSetup(s => ({ ...s, customStudy: e.target.value }))}
-                style={{ width: 60, padding: '4px 8px', borderRadius: 6, border: `1px solid ${focusSetup.customStudy ? ACCENT : 'var(--border)'}`, fontFamily: 'Sora, sans-serif', fontSize: 12, color: 'var(--text)', background: 'var(--surface)', outline: 'none' }}
+                style={{ width: 60, padding: '4px 8px', borderRadius: 6, border: `1px solid ${focusSetup.customStudy ? ACCENT : 'var(--navi-border)'}`, fontFamily: 'Sora, sans-serif', fontSize: 12, color: 'var(--text)', background: 'var(--surface)', outline: 'none' }}
               />
             </div>
           </div>
@@ -2385,14 +2400,14 @@ function TimerPanel({ task, activeTimer, onStartFree, onStartFocus, onPause, onS
                 <button
                   key={m}
                   onClick={() => setFocusSetup(s => ({ ...s, breakMin: m, customBreak: '' }))}
-                  style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, border: `1px solid ${focusSetup.breakMin === m && !focusSetup.customBreak ? ACCENT : 'var(--border)'}`, background: focusSetup.breakMin === m && !focusSetup.customBreak ? `color-mix(in srgb, ${ACCENT} 10%, transparent)` : 'none', color: focusSetup.breakMin === m && !focusSetup.customBreak ? ACCENT : 'var(--text)', cursor: 'pointer', fontFamily: 'Sora, sans-serif' }}
+                  style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, border: `1px solid ${focusSetup.breakMin === m && !focusSetup.customBreak ? ACCENT : 'var(--navi-border)'}`, background: focusSetup.breakMin === m && !focusSetup.customBreak ? `color-mix(in srgb, ${ACCENT} 10%, transparent)` : 'none', color: focusSetup.breakMin === m && !focusSetup.customBreak ? ACCENT : 'var(--text)', cursor: 'pointer', fontFamily: 'Sora, sans-serif' }}
                 >{m}m</button>
               ))}
               <input
                 placeholder="Custom"
                 value={focusSetup.customBreak}
                 onChange={e => setFocusSetup(s => ({ ...s, customBreak: e.target.value }))}
-                style={{ width: 60, padding: '4px 8px', borderRadius: 6, border: `1px solid ${focusSetup.customBreak ? ACCENT : 'var(--border)'}`, fontFamily: 'Sora, sans-serif', fontSize: 12, color: 'var(--text)', background: 'var(--surface)', outline: 'none' }}
+                style={{ width: 60, padding: '4px 8px', borderRadius: 6, border: `1px solid ${focusSetup.customBreak ? ACCENT : 'var(--navi-border)'}`, fontFamily: 'Sora, sans-serif', fontSize: 12, color: 'var(--text)', background: 'var(--surface)', outline: 'none' }}
               />
             </div>
           </div>
@@ -2405,12 +2420,12 @@ function TimerPanel({ task, activeTimer, onStartFree, onStartFocus, onPause, onS
                 <button
                   key={r}
                   onClick={() => setFocusSetup(s => ({ ...s, rounds: r, customRounds: '' }))}
-                  style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, border: `1px solid ${focusSetup.rounds === r && !focusSetup.customRounds ? ACCENT : 'var(--border)'}`, background: focusSetup.rounds === r && !focusSetup.customRounds ? `color-mix(in srgb, ${ACCENT} 10%, transparent)` : 'none', color: focusSetup.rounds === r && !focusSetup.customRounds ? ACCENT : 'var(--text)', cursor: 'pointer', fontFamily: 'Sora, sans-serif' }}
+                  style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, border: `1px solid ${focusSetup.rounds === r && !focusSetup.customRounds ? ACCENT : 'var(--navi-border)'}`, background: focusSetup.rounds === r && !focusSetup.customRounds ? `color-mix(in srgb, ${ACCENT} 10%, transparent)` : 'none', color: focusSetup.rounds === r && !focusSetup.customRounds ? ACCENT : 'var(--text)', cursor: 'pointer', fontFamily: 'Sora, sans-serif' }}
                 >{r}</button>
               ))}
               <button
                 onClick={() => setFocusSetup(s => ({ ...s, customRounds: '∞', rounds: -1 }))}
-                style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, border: `1px solid ${focusSetup.rounds === -1 ? ACCENT : 'var(--border)'}`, background: focusSetup.rounds === -1 ? `color-mix(in srgb, ${ACCENT} 10%, transparent)` : 'none', color: focusSetup.rounds === -1 ? ACCENT : 'var(--text)', cursor: 'pointer', fontFamily: 'Sora, sans-serif' }}
+                style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, border: `1px solid ${focusSetup.rounds === -1 ? ACCENT : 'var(--navi-border)'}`, background: focusSetup.rounds === -1 ? `color-mix(in srgb, ${ACCENT} 10%, transparent)` : 'none', color: focusSetup.rounds === -1 ? ACCENT : 'var(--text)', cursor: 'pointer', fontFamily: 'Sora, sans-serif' }}
               >∞</button>
             </div>
           </div>
@@ -2701,24 +2716,23 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: '100vh', background: 'var(--navi-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <p style={{ color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif' }}>Loading…</p>
       </div>
     )
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--navi-bg)' }}>
       <Sidebar classes={classes} activeTab={activeTab} onTabChange={setActiveTab} />
 
       <div style={{ marginLeft: 210, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-        <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
+        <TabBar activeTab={activeTab} onTabChange={setActiveTab} onOpenCustomize={() => setShowCustomize(true)} />
 
         <div style={{ flex: 1 }}>
           {activeTab === 0 && (
             <DashboardTab
               greetingName={greetingName}
-              onOpenCustomize={() => setShowCustomize(true)}
               classes={classes}
               weekData={weekData}
               monthAssignments={monthAssignments}
@@ -2775,28 +2789,9 @@ export default function Dashboard() {
         onGreetingNameChange={setGreetingName}
       />
 
-      <button
-        onClick={() => setShowCustomize(v => !v)}
-        title="Customize theme"
-        style={{
-          position: 'fixed', bottom: 28, right: 28, zIndex: 199,
-          width: 44, height: 44, borderRadius: '50%',
-          background: 'var(--accent)', color: '#fff',
-          border: 'none', cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 20, lineHeight: 1,
-          boxShadow: '0 4px 14px rgba(0,0,0,0.18)',
-          transition: 'transform 0.15s, box-shadow 0.15s',
-        }}
-        onMouseOver={e => { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.22)' }}
-        onMouseOut={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(0,0,0,0.18)' }}
-      >
-        🎨
-      </button>
-
       {/* Footer */}
       <footer style={{
-        marginLeft: 0, borderTop: '1px solid var(--border)',
+        marginLeft: 0, borderTop: '1px solid var(--navi-border)',
         padding: '14px 28px', display: 'flex', alignItems: 'center',
         justifyContent: 'center', gap: 20,
       }}>
@@ -2807,7 +2802,7 @@ export default function Dashboard() {
           fontSize: 12, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif',
           textDecoration: 'none', fontWeight: 500,
         }}
-          onMouseOver={e => e.currentTarget.style.color = 'var(--accent)'}
+          onMouseOver={e => e.currentTarget.style.color = 'var(--navi-accent)'}
           onMouseOut={e => e.currentTarget.style.color = 'var(--text-muted)'}
         >
           Privacy Policy
@@ -2816,7 +2811,7 @@ export default function Dashboard() {
           fontSize: 12, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif',
           textDecoration: 'none', fontWeight: 500,
         }}
-          onMouseOver={e => e.currentTarget.style.color = 'var(--accent)'}
+          onMouseOver={e => e.currentTarget.style.color = 'var(--navi-accent)'}
           onMouseOut={e => e.currentTarget.style.color = 'var(--text-muted)'}
         >
           Contact

@@ -43,26 +43,26 @@ const DEFAULTS = {
 // ─── CSS variable helpers ─────────────────────────────────────────────────────
 function applyFullPreset(preset) {
   const r = document.documentElement.style
-  r.setProperty('--bg',           preset.bgColor)
+  r.setProperty('--navi-bg',      preset.bgColor)
   r.setProperty('--surface',      preset.surface)
   r.setProperty('--surface-side', preset.surfaceSide)
-  r.setProperty('--border',       preset.borderColor)
-  r.setProperty('--accent',       preset.accentColor)
+  r.setProperty('--navi-border',  preset.borderColor)
+  r.setProperty('--navi-accent',  preset.accentColor)
   r.setProperty('--text',         preset.textColor)
   r.setProperty('--text-muted',   preset.textMuted)
 }
 
 function applyColors({ bgColor, borderColor, accentColor }) {
   const r = document.documentElement.style
-  r.setProperty('--bg',     bgColor)
-  r.setProperty('--border', borderColor)
-  r.setProperty('--accent', accentColor)
+  r.setProperty('--navi-bg',     bgColor)
+  r.setProperty('--navi-border', borderColor)
+  r.setProperty('--navi-accent', accentColor)
 }
 
 function applyBorderStyle(style) {
   const r = document.documentElement.style
-  r.setProperty('--border-style', style === 'rounded' ? 'solid'  : style)
-  r.setProperty('--card-radius',  style === 'rounded' ? '20px'   : '12px')
+  r.setProperty('--navi-border-style', style === 'rounded' ? 'solid' : style)
+  r.setProperty('--navi-card-radius',  style === 'rounded' ? '20px'  : '12px')
 }
 
 // ─── Mini dashboard preview thumbnail ─────────────────────────────────────────
@@ -121,7 +121,7 @@ function PresetThumb({ preset, isSelected, onClick }) {
 
       <span style={{
         fontSize: 11, fontFamily: 'Sora, sans-serif',
-        color: isSelected ? 'var(--accent)' : 'var(--text-muted)',
+        color: isSelected ? 'var(--navi-accent)' : 'var(--text-muted)',
         fontWeight: isSelected ? 600 : 400,
         letterSpacing: '0.01em',
       }}>
@@ -135,11 +135,11 @@ function PresetThumb({ preset, isSelected, onClick }) {
 function BorderStyleOption({ value, label, selected, onClick }) {
   const preview =
     value === 'solid' ? (
-      <div style={{ width: 36, borderTop: '2px solid var(--border)' }} />
+      <div style={{ width: 36, borderTop: '2px solid var(--navi-border)' }} />
     ) : value === 'dashed' ? (
-      <div style={{ width: 36, borderTop: '2px dashed var(--border)' }} />
+      <div style={{ width: 36, borderTop: '2px dashed var(--navi-border)' }} />
     ) : (
-      <div style={{ width: 36, height: 18, border: '2px solid var(--border)', borderRadius: 18 }} />
+      <div style={{ width: 36, height: 18, border: '2px solid var(--navi-border)', borderRadius: 18 }} />
     )
 
   return (
@@ -148,10 +148,10 @@ function BorderStyleOption({ value, label, selected, onClick }) {
       style={{
         flex: 1, padding: '9px 6px',
         borderRadius: 8,
-        border: `2px solid ${selected ? 'var(--accent)' : 'var(--border)'}`,
+        border: `2px solid ${selected ? 'var(--navi-accent)' : 'var(--navi-border)'}`,
         background: selected
-          ? 'color-mix(in srgb, var(--accent) 8%, var(--surface))'
-          : 'var(--bg)',
+          ? 'color-mix(in srgb, var(--navi-accent) 8%, var(--surface))'
+          : 'var(--navi-bg)',
         cursor: 'pointer',
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', gap: 6,
@@ -161,7 +161,7 @@ function BorderStyleOption({ value, label, selected, onClick }) {
       {preview}
       <span style={{
         fontSize: 11, fontFamily: 'Sora, sans-serif',
-        color: selected ? 'var(--accent)' : 'var(--text-muted)',
+        color: selected ? 'var(--navi-accent)' : 'var(--text-muted)',
         fontWeight: selected ? 600 : 400,
       }}>
         {label}
@@ -199,7 +199,7 @@ function ColorRow({ label, value, onChange }) {
           <div style={{
             width: 30, height: 30, borderRadius: 6,
             background: value,
-            border: '2px solid var(--border)',
+            border: '2px solid var(--navi-border)',
             cursor: 'pointer',
           }} />
           <input
@@ -350,7 +350,7 @@ export default function CustomizePanel({ open, onClose, onGreetingNameChange }) 
           position: 'fixed', top: 0, right: 0, bottom: 0,
           width: 320,
           background: 'var(--surface)',
-          borderLeft: '1.5px solid var(--border)',
+          borderLeft: '1.5px solid var(--navi-border)',
           zIndex: 201,
           display: 'flex', flexDirection: 'column',
           transform: open ? 'translateX(0)' : 'translateX(100%)',
@@ -363,7 +363,7 @@ export default function CustomizePanel({ open, onClose, onGreetingNameChange }) 
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '18px 20px 14px',
-          borderBottom: '1px solid var(--border)',
+          borderBottom: '1px solid var(--navi-border)',
           flexShrink: 0,
         }}>
           <div>
@@ -418,8 +418,8 @@ export default function CustomizePanel({ open, onClose, onGreetingNameChange }) 
           {/* ── Colors ── */}
           <SectionLabel>Colors</SectionLabel>
           <div style={{
-            background: 'var(--bg)', borderRadius: 10,
-            border: '1px solid var(--border)',
+            background: 'var(--navi-bg)', borderRadius: 10,
+            border: '1px solid var(--navi-border)',
             padding: '12px 14px',
             display: 'flex', flexDirection: 'column', gap: 12,
             marginBottom: 24,
@@ -429,13 +429,13 @@ export default function CustomizePanel({ open, onClose, onGreetingNameChange }) 
               value={prefs.bgColor}
               onChange={v => updateField('bgColor', v)}
             />
-            <div style={{ height: 1, background: 'var(--border)', opacity: 0.6 }} />
+            <div style={{ height: 1, background: 'var(--navi-border)', opacity: 0.6 }} />
             <ColorRow
               label="Card border"
               value={prefs.borderColor}
               onChange={v => updateField('borderColor', v)}
             />
-            <div style={{ height: 1, background: 'var(--border)', opacity: 0.6 }} />
+            <div style={{ height: 1, background: 'var(--navi-border)', opacity: 0.6 }} />
             <ColorRow
               label="Accent"
               value={prefs.accentColor}
@@ -471,9 +471,9 @@ export default function CustomizePanel({ open, onClose, onGreetingNameChange }) 
             style={{
               width: '100%', boxSizing: 'border-box',
               padding: '9px 12px',
-              border: '1.5px solid var(--border)',
+              border: '1.5px solid var(--navi-border)',
               borderRadius: 8,
-              background: 'var(--bg)',
+              background: 'var(--navi-bg)',
               color: 'var(--text)',
               fontFamily: 'Sora, sans-serif', fontSize: 13,
               outline: 'none',
@@ -485,7 +485,7 @@ export default function CustomizePanel({ open, onClose, onGreetingNameChange }) 
         {/* Footer — Save / Discard */}
         <div style={{
           padding: '14px 20px',
-          borderTop: '1px solid var(--border)',
+          borderTop: '1px solid var(--navi-border)',
           display: 'flex', flexDirection: 'column', gap: 8,
           flexShrink: 0,
         }}>
@@ -513,7 +513,7 @@ export default function CustomizePanel({ open, onClose, onGreetingNameChange }) 
             style={{
               width: '100%', padding: '10px',
               borderRadius: 8, border: 'none',
-              background: 'var(--accent)', color: '#fff',
+              background: 'var(--navi-accent)', color: '#fff',
               fontFamily: 'Sora, sans-serif', fontSize: 13, fontWeight: 600,
               cursor: saving ? 'not-allowed' : 'pointer',
               opacity: saving ? 0.7 : 1,
@@ -528,7 +528,7 @@ export default function CustomizePanel({ open, onClose, onGreetingNameChange }) 
             style={{
               width: '100%', padding: '9px',
               borderRadius: 8,
-              border: '1px solid var(--border)',
+              border: '1px solid var(--navi-border)',
               background: 'transparent',
               color: isDirty ? 'var(--text)' : 'var(--text-muted)',
               fontFamily: 'Sora, sans-serif', fontSize: 13,
