@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { getToken, getUser, isLoggedIn } from '../lib/auth'
+import CustomizePanel from '../components/CustomizePanel'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const CLASS_COLORS = { 1: '#3A7BD5', 2: '#D4622A', 3: '#2E9E68', 4: '#8052C8' }
@@ -1261,6 +1262,7 @@ function GoogleCalendarCard({ events, connected }) {
 
 // ─── Dashboard tab content ────────────────────────────────────────────────────
 function DashboardTab({
+  greetingName, onOpenCustomize,
   classes, weekData, monthAssignments, monthIndicators,
   calYear, calMonth, onCalPrev, onCalNext,
   syllabusStatus, syllabusData, rolledOverByClass, canvasStatus,
@@ -1304,7 +1306,7 @@ function DashboardTab({
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: checkinVisible ? 14 : 22, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h2 style={{ fontSize: 26, margin: 0, fontFamily: 'Playfair Display, serif' }}>
-            {getGreeting()}, {user?.name?.split(' ')[0]}.
+            {getGreeting()}, {greetingName || user?.name?.split(' ')[0]}.
           </h2>
           <p style={{ margin: '5px 0 0', fontSize: 13, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif' }}>
             {dateStr} · {canvasCount} assignment{canvasCount !== 1 ? 's' : ''} pulled from Canvas this week
@@ -1312,6 +1314,19 @@ function DashboardTab({
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+          {/* Customize button */}
+          <button
+            onClick={onOpenCustomize}
+            title="Customize theme"
+            style={{
+              padding: '8px 12px', borderRadius: 8,
+              border: '1px solid var(--border)', background: 'transparent',
+              color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif', fontSize: 18,
+              cursor: 'pointer', lineHeight: 1, display: 'flex', alignItems: 'center',
+            }}
+          >
+            🎨
+          </button>
           {/* Am I on track button */}
           <button
             onClick={handleOnTrack}
@@ -2436,6 +2451,8 @@ export default function Dashboard() {
   const [dayData,          setDayData]          = useState(null)
   const [todayTasks,       setTodayTasks]       = useState([])
   const [loading,          setLoading]          = useState(true)
+  const [showCustomize,    setShowCustomize]    = useState(false)
+  const [greetingName,     setGreetingName]     = useState('')
 
   useEffect(() => {
     if (!isLoggedIn())           { navigate('/login');      return }
@@ -2700,6 +2717,8 @@ export default function Dashboard() {
         <div style={{ flex: 1 }}>
           {activeTab === 0 && (
             <DashboardTab
+              greetingName={greetingName}
+              onOpenCustomize={() => setShowCustomize(true)}
               classes={classes}
               weekData={weekData}
               monthAssignments={monthAssignments}
@@ -2748,6 +2767,32 @@ export default function Dashboard() {
           onSave={handleSaveNote}
         />
       )}
+
+      {/* Customize panel + floating trigger button */}
+      <CustomizePanel
+        open={showCustomize}
+        onClose={() => setShowCustomize(false)}
+        onGreetingNameChange={setGreetingName}
+      />
+
+      <button
+        onClick={() => setShowCustomize(v => !v)}
+        title="Customize theme"
+        style={{
+          position: 'fixed', bottom: 28, right: 28, zIndex: 199,
+          width: 44, height: 44, borderRadius: '50%',
+          background: 'var(--accent)', color: '#fff',
+          border: 'none', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 20, lineHeight: 1,
+          boxShadow: '0 4px 14px rgba(0,0,0,0.18)',
+          transition: 'transform 0.15s, box-shadow 0.15s',
+        }}
+        onMouseOver={e => { e.currentTarget.style.transform = 'scale(1.08)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.22)' }}
+        onMouseOut={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(0,0,0,0.18)' }}
+      >
+        🎨
+      </button>
 
       {/* Footer */}
       <footer style={{

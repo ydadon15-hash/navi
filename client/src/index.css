@@ -14,6 +14,9 @@
   --accent:       #3A7BD5;
   --gold:         #C8952A;
 
+  --border-style: solid;
+  --card-radius:  12px;
+
   --class-1: #3A7BD5;   /* blue       */
   --class-2: #D4622A;   /* terracotta */
   --class-3: #2E9E68;   /* sage green */
@@ -39,8 +42,8 @@ h1, h2, h3, h4, h5, h6 {
 /* ── Card ── */
 .card {
   background: #FFFFFF;
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  border: 1px var(--border-style, solid) var(--border);
+  border-radius: var(--card-radius, 12px);
   padding: 20px;
   /* NO box-shadow — borders only */
 }
