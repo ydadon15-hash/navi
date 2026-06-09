@@ -35,12 +35,27 @@ model User {
   stripeSubscriptionId    String?
   googleRefreshToken      String?
 
+  preferences    UserPreferences?
+
   classes        Class[]
   studyPlanDays  StudyPlanDay[]
   dayNotes       DayNote[]
   dayTasks       DayTask[]
   studySessions  StudySession[]
   calendarEvents CalendarEvent[]
+}
+
+model UserPreferences {
+  id           Int    @id @default(autoincrement())
+  userId       Int    @unique
+  bgColor      String @default("#F5F0E8")
+  borderColor  String @default("#C5A028")
+  accentColor  String @default("#2D5A3D")
+  borderStyle  String @default("solid")
+  greetingName String @default("")
+  presetName   String @default("Forest")
+
+  user User @relation(fields: [userId], references: [id])
 }
 
 model Class {

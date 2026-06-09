@@ -16,6 +16,7 @@ const settingsRoutes     = require('./routes/settings');
 const viewRoutes         = require('./routes/view');
 const subscriptionRoutes    = require('./routes/subscription');
 const googleCalendarRoutes  = require('./routes/googleCalendar');
+const preferencesRoutes     = require('./routes/preferences');
 const { startCron }         = require('./cron');
 
 const app = express();
@@ -58,6 +59,7 @@ app.use('/api/settings',     settingsRoutes);
 app.use('/api/view',         viewRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/google',       googleCalendarRoutes);
+app.use('/api/preferences',  preferencesRoutes);
 
 startCron();
 
