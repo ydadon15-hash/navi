@@ -312,28 +312,94 @@ function TabBar({ activeTab, onTabChange, onOpenCustomize }) {
   )
 }
 
-// ─── Calendar card ────────────────────────────────────────────────────────────
+// ─── Calendar pill popup ──────────────────────────────────────────────
+function CalPillPopup({ event, anchorRect, onClose }) {
+  const POPUP_H = 86
+  const POPUP_W = 248
+  const spaceAbove = anchorRect.top - 8
+  const showAbove  = spaceAbove >= POPUP_H
+  const top  = showAbove ? anchorRect.top - POPUP_H - 6 : anchorRect.bottom + 6
+  const left = Math.max(8, Math.min(anchorRect.left, window.innerWidth - POPUP_W - 8))
+
+  const isCanvas    = event.type === 'canvas'
+  const accentColor = isCanvas ? 'rgba(175,120,15,0.85)' : 'var(--navi-accent)'
+  const dateLabel   = event.fullDate
+    ? new Date(event.fullDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+    : ''
+
+  return (
+    <div
+      data-pill-popup="true"
+      style={{
+        position: 'fixed', top, left, zIndex: 500,
+        width: POPUP_W,
+        background: 'var(--surface)',
+        border: '1px solid var(--navi-border)',
+        borderTop: `3px solid ${accentColor}`,
+        borderRadius: 10,
+        padding: '11px 14px',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.14)',
+        fontFamily: 'Sora, sans-serif',
+      }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 5 }}>
+        <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text)', lineHeight: 1.4, flex: 1 }}>
+          {event.title}
+        </p>
+        <button
+          onClick={onClose}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--text-muted)', lineHeight: 1, padding: 0, flexShrink: 0, marginTop: -1 }}
+        >×</button>
+      </div>
+      {(dateLabel || event.time) && (
+        <p style={{ margin: 0, fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+          {dateLabel}{event.time ? ` · ${event.time}` : ''}
+        </p>
+      )}
+    </div>
+  )
+}
+
+// ─── Calendar card ────────────────────────────────────────────────────────────────────────────
 function CalendarCard({ year, month, assignments, indicators, selectedDate, onSelectDate, onPrev, onNext, gcalEvents = [] }) {
   const today = new Date()
   const cells = buildCalGrid(year, month)
   const isCurrentMonth = today.getFullYear() === year && today.getMonth() + 1 === month
-  const indicatorSet = new Set(indicators)
+  const indicatorSet   = new Set(indicators)
 
-  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768)
+  const [isMobile,     setIsMobile]     = useState(typeof window !== 'undefined' && window.innerWidth < 768)
+  const [activePopup,  setActivePopup]  = useState(null)
+  const [expandedDays, setExpandedDays] = useState(new Set())
+
   useEffect(() => {
     const handler = () => setIsMobile(window.innerWidth < 768)
     window.addEventListener('resize', handler)
     return () => window.removeEventListener('resize', handler)
   }, [])
 
-  // Build per-day event list for pill display
+  useEffect(() => {
+    setActivePopup(null)
+    setExpandedDays(new Set())
+  }, [year, month])
+
+  useEffect(() => {
+    if (!activePopup) return
+    const handler = e => {
+      if (!e.target.closest('[data-pill-popup]') && !e.target.closest('[data-cal-pill]'))
+        setActivePopup(null)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [activePopup])
+
+  // Build per-day event list
   const eventMap = {}
   for (const a of assignments) {
     const d = new Date(a.dueDate)
     if (d.getFullYear() === year && d.getMonth() + 1 === month) {
       const day = d.getDate()
       if (!eventMap[day]) eventMap[day] = []
-      eventMap[day].push({ type: 'canvas', title: a.title, time: null })
+      eventMap[day].push({ type: 'canvas', title: a.title, time: null, fullDate: a.dueDate })
     }
   }
   for (const ev of gcalEvents) {
@@ -341,14 +407,14 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
     if (d.getFullYear() === year && d.getMonth() + 1 === month) {
       const day = d.getDate()
       if (!eventMap[day]) eventMap[day] = []
-      eventMap[day].push({ type: 'gcal', title: ev.title, time: fmtPillTime(ev.startTime) })
+      eventMap[day].push({ type: 'gcal', title: ev.title, time: fmtPillTime(ev.startTime), fullDate: ev.startTime })
     }
   }
 
-  // Mobile fallback: dot data
+  // Mobile fallback dot data
   const dotMap = {}
   for (const a of assignments) {
-    const d = new Date(a.dueDate)
+    const d   = new Date(a.dueDate)
     const day = d.getDate()
     if (!dotMap[day]) dotMap[day] = new Set()
     dotMap[day].add(a.class.colorIndex)
@@ -365,8 +431,31 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
     if (sy === year && sm === month) selDay = sd
   }
 
+  const CELL_H      = 80
+  const GUTTER_W    = 36
+  const HOURS       = ['6AM','7AM','8AM','9AM','10AM','11AM','12PM','1PM','2PM','3PM','4PM','5PM','6PM','7PM','8PM','9PM','10PM','11PM']
+  const numWeekRows = Math.ceil(cells.length / 7)
+  const totalGridH  = numWeekRows * CELL_H
+  const slotH       = totalGridH / HOURS.length
+
+  function handlePillClick(e, ev) {
+    e.stopPropagation()
+    const rect = e.currentTarget.getBoundingClientRect()
+    setActivePopup(prev => prev && prev.event === ev ? null : { event: ev, anchorRect: rect })
+  }
+
+  function toggleExpanded(e, day) {
+    e.stopPropagation()
+    setExpandedDays(prev => {
+      const next = new Set(prev)
+      next.has(day) ? next.delete(day) : next.add(day)
+      return next
+    })
+  }
+
   return (
     <div className="card" style={{ marginBottom: 0, border: '2px solid rgba(15, 110, 55, 0.85)' }}>
+      {/* Month header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
         <h3 style={{ fontSize: 16, margin: 0 }}>{MONTH_NAMES[month - 1]} {year}</h3>
         <div style={{ display: 'flex', gap: 4 }}>
@@ -375,124 +464,168 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 4 }}>
-        {DOW_SHORT.map(d => (
-          <div key={d} style={{ textAlign: 'center', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', fontFamily: 'Sora, sans-serif', paddingBottom: 6 }}>
-            {d}
-          </div>
-        ))}
+      {/* DOW header row (shifted right by gutter on desktop) */}
+      <div style={{ display: 'flex', marginBottom: 4 }}>
+        {!isMobile && <div style={{ width: GUTTER_W, flexShrink: 0 }} />}
+        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
+          {DOW_SHORT.map(d => (
+            <div key={d} style={{ textAlign: 'center', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', fontFamily: 'Sora, sans-serif', paddingBottom: 6 }}>
+              {d}
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
-        {cells.map((day, i) => {
-          if (!day) return <div key={i} style={{ minHeight: isMobile ? 32 : 64 }} />
-          const isToday    = isCurrentMonth && today.getDate() === day
-          const isSelected = selDay === day
-          const dateStr    = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`
-          const hasPersonal = indicatorSet.has(dateStr)
-          const dayEvents  = eventMap[day] || []
+      {/* Time gutter + day grid */}
+      <div style={{ display: 'flex' }}>
 
-          return (
-            <div key={i}
-              onClick={() => onSelectDate(dateStr)}
-              style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'stretch',
-                padding: isMobile ? '3px 1px' : '3px 2px',
-                minHeight: isMobile ? 32 : 72,
-                gap: 2, cursor: 'pointer', borderRadius: 4,
-              }}
-            >
-              {/* Day number */}
-              <span style={{
-                fontSize: 12.5, fontFamily: 'Sora, sans-serif', lineHeight: 1.4,
-                fontWeight: isToday || isSelected ? 700 : 400,
-                color: isSelected ? ACCENT : isToday ? ACCENT : 'var(--text)',
-                textDecoration: isToday ? 'underline' : 'none',
-                textDecorationColor: ACCENT,
-                textDecorationThickness: '2.5px',
-                textUnderlineOffset: '3px',
-                background: isSelected && !isToday ? `color-mix(in srgb, ${ACCENT} 10%, transparent)` : 'transparent',
-                borderRadius: 4, padding: '1px 3px',
-                alignSelf: 'center',
-              }}>
-                {day}
-              </span>
+        {/* Time gutter */}
+        {!isMobile && (
+          <div style={{ width: GUTTER_W, flexShrink: 0, position: 'relative', height: totalGridH }}>
+            {HOURS.map((h, i) => (
+              <div key={h} style={{ position: 'absolute', top: i * slotH - 7, right: 0, width: '100%', display: 'flex', justifyContent: 'flex-end', paddingRight: 5 }}>
+                <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif', lineHeight: 1, opacity: 0.65 }}>
+                  {h}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
 
-              {/* Pills (desktop) or dots (mobile) */}
-              {isMobile ? (
-                <div style={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center', minHeight: 6 }}>
-                  {[...( dotMap[day] || new Set())].slice(0, 3).map((ci, j) => (
-                    <span key={j} style={{ width: 4, height: 4, borderRadius: '50%', background: CLASS_COLORS[ci] || ACCENT, display: 'block', flexShrink: 0 }} />
-                  ))}
-                  {gcalDaySet.has(day) && (
-                    <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--navi-accent)', display: 'block', flexShrink: 0 }} />
-                  )}
-                  {hasPersonal && (
-                    <span style={{ width: 4, height: 4, borderRadius: 1, background: 'var(--text-muted)', opacity: 0.5, display: 'block', flexShrink: 0 }} />
-                  )}
+        {/* Day cells grid with horizontal rules */}
+        <div style={{
+          flex: 1,
+          display: 'grid',
+          gridTemplateColumns: 'repeat(7, 1fr)',
+          backgroundImage: !isMobile
+            ? `repeating-linear-gradient(to bottom, transparent 0px, transparent ${slotH - 1}px, rgba(0,0,0,0.05) ${slotH - 1}px, rgba(0,0,0,0.05) ${slotH}px)`
+            : 'none',
+        }}>
+          {cells.map((day, i) => {
+            if (!day) return <div key={i} style={{ minHeight: isMobile ? 32 : CELL_H }} />
+            const isToday     = isCurrentMonth && today.getDate() === day
+            const isSelected  = selDay === day
+            const dateStr     = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`
+            const hasPersonal = indicatorSet.has(dateStr)
+            const dayEvents   = eventMap[day] || []
+            const isExpanded  = expandedDays.has(day)
+            const visibleEvs  = isExpanded ? dayEvents : dayEvents.slice(0, 2)
+            const hiddenCount = dayEvents.length - 2
+
+            return (
+              <div
+                key={i}
+                onClick={() => onSelectDate(dateStr)}
+                style={{
+                  display: 'flex', flexDirection: 'column',
+                  padding: isMobile ? '3px 1px' : '4px 2px 4px 0',
+                  minHeight: isMobile ? 32 : CELL_H,
+                  gap: 2, cursor: 'pointer',
+                  borderRight: '1px solid rgba(0,0,0,0.05)',
+                  borderBottom: '1px solid rgba(0,0,0,0.05)',
+                  boxSizing: 'border-box',
+                }}
+              >
+                {/* Day number top-right */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', paddingRight: 4 }}>
+                  <span style={{
+                    fontSize: 12.5, fontFamily: 'Sora, sans-serif', lineHeight: 1.4,
+                    fontWeight: isToday || isSelected ? 700 : 400,
+                    color: isSelected ? ACCENT : isToday ? ACCENT : 'var(--text)',
+                    textDecoration: isToday ? 'underline' : 'none',
+                    textDecorationColor: ACCENT,
+                    textDecorationThickness: '2.5px',
+                    textUnderlineOffset: '3px',
+                    background: isSelected && !isToday ? `color-mix(in srgb, ${ACCENT} 10%, transparent)` : 'transparent',
+                    borderRadius: 4, padding: '1px 3px',
+                  }}>
+                    {day}
+                  </span>
                 </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 3, margin: '0 4px' }}>
-                  {dayEvents.slice(0, 2).map((ev, j) => {
-                    const isCanvas = ev.type === 'canvas'
-                    const accentColor = isCanvas ? 'rgba(175,120,15,0.85)' : 'var(--navi-accent)'
-                    return (
-                      <div key={j} style={{
-                        display: 'flex',
-                        alignItems: 'baseline',
-                        gap: 3,
-                        padding: '4px 6px',
-                        borderRadius: 6,
-                        borderLeft: `3px solid ${accentColor}`,
-                        background: 'var(--navi-bg)',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-                        overflow: 'hidden',
-                        boxSizing: 'border-box',
-                        minWidth: 0,
-                      }}>
-                        {ev.time && (
-                          <span style={{
+
+                {/* Pills (desktop) or dots (mobile) */}
+                {isMobile ? (
+                  <div style={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center', minHeight: 6 }}>
+                    {[...(dotMap[day] || new Set())].slice(0, 3).map((ci, j) => (
+                      <span key={j} style={{ width: 4, height: 4, borderRadius: '50%', background: CLASS_COLORS[ci] || ACCENT, display: 'block', flexShrink: 0 }} />
+                    ))}
+                    {gcalDaySet.has(day) && (
+                      <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--navi-accent)', display: 'block', flexShrink: 0 }} />
+                    )}
+                    {hasPersonal && (
+                      <span style={{ width: 4, height: 4, borderRadius: 1, background: 'var(--text-muted)', opacity: 0.5, display: 'block', flexShrink: 0 }} />
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '0 3px' }}>
+                    {visibleEvs.map((ev, j) => {
+                      const isCanvas    = ev.type === 'canvas'
+                      const borderColor = isCanvas ? 'rgba(175,120,15,0.85)' : 'var(--navi-accent)'
+                      const label       = ev.time ? `${ev.time} · ${ev.title}` : ev.title
+                      return (
+                        <button
+                          key={j}
+                          data-cal-pill="true"
+                          onClick={e => handlePillClick(e, ev)}
+                          title={label}
+                          style={{
+                            display: 'block',
+                            height: 20,
+                            width: '100%',
+                            padding: '0 5px',
+                            border: `1.5px solid ${borderColor}`,
+                            borderRadius: 4,
+                            background: '#FFFFFF',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.06)',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
                             fontSize: 11,
                             fontFamily: 'Sora, sans-serif',
                             fontWeight: 500,
-                            color: 'var(--text-muted)',
-                            whiteSpace: 'nowrap',
+                            color: 'var(--text)',
+                            cursor: 'pointer',
+                            boxSizing: 'border-box',
+                            textAlign: 'left',
                             flexShrink: 0,
-                            lineHeight: 1.4,
-                          }}>
-                            {ev.time} ·
-                          </span>
-                        )}
-                        <span style={{
-                          fontSize: 11,
-                          fontFamily: 'Sora, sans-serif',
-                          fontWeight: 500,
-                          color: 'var(--text)',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          lineHeight: 1.4,
-                          minWidth: 0,
-                        }}>
-                          {ev.title}
-                        </span>
-                      </div>
-                    )
-                  })}
-                  {dayEvents.length > 2 && (
-                    <span style={{
-                      fontSize: 10, fontFamily: 'Sora, sans-serif', color: 'var(--text-muted)',
-                      fontWeight: 400, lineHeight: 1.4,
-                    }}>
-                      +{dayEvents.length - 2} more
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-          )
-        })}
+                          }}
+                        >
+                          {label}
+                        </button>
+                      )
+                    })}
+                    {!isExpanded && hiddenCount > 0 && (
+                      <button
+                        onClick={e => toggleExpanded(e, day)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 10, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif', fontWeight: 400, padding: '0 2px', textAlign: 'left', lineHeight: 1.4 }}
+                      >
+                        +{hiddenCount} more
+                      </button>
+                    )}
+                    {isExpanded && dayEvents.length > 2 && (
+                      <button
+                        onClick={e => toggleExpanded(e, day)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 10, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif', fontWeight: 400, padding: '0 2px', textAlign: 'left', lineHeight: 1.4 }}
+                      >
+                        − less
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
       </div>
+
+      {/* Pill detail popup */}
+      {activePopup && (
+        <CalPillPopup
+          event={activePopup.event}
+          anchorRect={activePopup.anchorRect}
+          onClose={() => setActivePopup(null)}
+        />
+      )}
     </div>
   )
 }
