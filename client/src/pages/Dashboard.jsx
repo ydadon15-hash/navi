@@ -70,6 +70,17 @@ function parseDateStr(str) {
   return new Date(y, m - 1, d)
 }
 
+function fmtPillTime(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (d.getUTCHours() === 0 && d.getUTCMinutes() === 0 && d.getSeconds() === 0) return ''
+  const h = d.getHours()
+  const mn = d.getMinutes()
+  const ampm = h >= 12 ? 'PM' : 'AM'
+  const h12 = h % 12 || 12
+  return mn === 0 ? `${h12}${ampm}` : `${h12}:${String(mn).padStart(2,'0')}${ampm}`
+}
+
 function fmtMmSs(totalSeconds) {
   const m = Math.floor(totalSeconds / 60)
   const s = totalSeconds % 60
@@ -308,6 +319,33 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
   const isCurrentMonth = today.getFullYear() === year && today.getMonth() + 1 === month
   const indicatorSet = new Set(indicators)
 
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768)
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+
+  // Build per-day event list for pill display
+  const eventMap = {}
+  for (const a of assignments) {
+    const d = new Date(a.dueDate)
+    if (d.getFullYear() === year && d.getMonth() + 1 === month) {
+      const day = d.getDate()
+      if (!eventMap[day]) eventMap[day] = []
+      eventMap[day].push({ type: 'canvas', title: a.title, time: null })
+    }
+  }
+  for (const ev of gcalEvents) {
+    const d = new Date(ev.startTime)
+    if (d.getFullYear() === year && d.getMonth() + 1 === month) {
+      const day = d.getDate()
+      if (!eventMap[day]) eventMap[day] = []
+      eventMap[day].push({ type: 'gcal', title: ev.title, time: fmtPillTime(ev.startTime) })
+    }
+  }
+
+  // Mobile fallback: dot data
   const dotMap = {}
   for (const a of assignments) {
     const d = new Date(a.dueDate)
@@ -315,14 +353,10 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
     if (!dotMap[day]) dotMap[day] = new Set()
     dotMap[day].add(a.class.colorIndex)
   }
-
-  // Build a set of day-numbers in this month that have gcal events
   const gcalDaySet = new Set()
   for (const ev of gcalEvents) {
     const d = new Date(ev.startTime)
-    if (d.getFullYear() === year && d.getMonth() + 1 === month) {
-      gcalDaySet.add(d.getDate())
-    }
+    if (d.getFullYear() === year && d.getMonth() + 1 === month) gcalDaySet.add(d.getDate())
   }
 
   let selDay = null
@@ -351,19 +385,24 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
         {cells.map((day, i) => {
-          if (!day) return <div key={i} style={{ padding: '4px 0' }} />
+          if (!day) return <div key={i} style={{ minHeight: isMobile ? 32 : 64 }} />
           const isToday    = isCurrentMonth && today.getDate() === day
           const isSelected = selDay === day
-          const dots       = dotMap[day] ? [...dotMap[day]] : []
           const dateStr    = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`
           const hasPersonal = indicatorSet.has(dateStr)
-          const hasGcal    = gcalDaySet.has(day)
+          const dayEvents  = eventMap[day] || []
 
           return (
             <div key={i}
               onClick={() => onSelectDate(dateStr)}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '3px 0', gap: 2, cursor: 'pointer', borderRadius: 4 }}
+              style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'stretch',
+                padding: isMobile ? '3px 1px' : '3px 2px',
+                minHeight: isMobile ? 32 : 64,
+                gap: 2, cursor: 'pointer', borderRadius: 4,
+              }}
             >
+              {/* Day number */}
               <span style={{
                 fontSize: 12.5, fontFamily: 'Sora, sans-serif', lineHeight: 1.4,
                 fontWeight: isToday || isSelected ? 700 : 400,
@@ -374,20 +413,59 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
                 textUnderlineOffset: '3px',
                 background: isSelected && !isToday ? `color-mix(in srgb, ${ACCENT} 10%, transparent)` : 'transparent',
                 borderRadius: 4, padding: '1px 3px',
+                alignSelf: 'center',
               }}>
                 {day}
               </span>
-              <div style={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center', minHeight: 6 }}>
-                {dots.slice(0, 3).map((ci, j) => (
-                  <span key={j} style={{ width: 4, height: 4, borderRadius: '50%', background: CLASS_COLORS[ci] || ACCENT, display: 'block', flexShrink: 0 }} />
-                ))}
-                {hasGcal && (
-                  <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'linear-gradient(135deg,#4285F4,#7c3aed)', display: 'block', flexShrink: 0, boxShadow: '0 0 3px rgba(66,133,244,0.6)' }} />
-                )}
-                {hasPersonal && (
-                  <span style={{ width: 4, height: 4, borderRadius: 1, background: 'var(--text-muted)', opacity: 0.5, display: 'block', flexShrink: 0 }} />
-                )}
-              </div>
+
+              {/* Pills (desktop) or dots (mobile) */}
+              {isMobile ? (
+                <div style={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center', minHeight: 6 }}>
+                  {[...( dotMap[day] || new Set())].slice(0, 3).map((ci, j) => (
+                    <span key={j} style={{ width: 4, height: 4, borderRadius: '50%', background: CLASS_COLORS[ci] || ACCENT, display: 'block', flexShrink: 0 }} />
+                  ))}
+                  {gcalDaySet.has(day) && (
+                    <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--navi-accent)', display: 'block', flexShrink: 0 }} />
+                  )}
+                  {hasPersonal && (
+                    <span style={{ width: 4, height: 4, borderRadius: 1, background: 'var(--text-muted)', opacity: 0.5, display: 'block', flexShrink: 0 }} />
+                  )}
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {dayEvents.slice(0, 2).map((ev, j) => {
+                    const isCanvas = ev.type === 'canvas'
+                    const label = ev.time ? `${ev.time} · ${ev.title}` : ev.title
+                    return (
+                      <span key={j} style={{
+                        display: 'block',
+                        padding: '2px 4px',
+                        borderRadius: 3,
+                        fontSize: 9,
+                        fontFamily: 'Sora, sans-serif',
+                        fontWeight: 600,
+                        color: '#fff',
+                        background: isCanvas ? 'rgba(175,120,15,0.85)' : 'var(--navi-accent)',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        lineHeight: 1.5,
+                        boxSizing: 'border-box',
+                      }}>
+                        {label}
+                      </span>
+                    )
+                  })}
+                  {dayEvents.length > 2 && (
+                    <span style={{
+                      fontSize: 8.5, fontFamily: 'Sora, sans-serif', color: 'var(--text-muted)',
+                      fontWeight: 500, paddingLeft: 2, lineHeight: 1.4,
+                    }}>
+                      +{dayEvents.length - 2} more
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           )
         })}
