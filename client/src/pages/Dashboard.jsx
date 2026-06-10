@@ -846,7 +846,7 @@ function WeekStrip({ weekData, selectedDate, onChipClick, onDayClick, onDifficul
   const weekDays = getWeekDays()
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, marginBottom: 20 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, marginBottom: 20, minWidth: 0 }}>
       {weekDays.map((day, i) => {
         const isToday       = isSameDay(day, today)
         const dayStr        = dateToStr(day)
@@ -866,6 +866,7 @@ function WeekStrip({ weekData, selectedDate, onChipClick, onDayClick, onDifficul
                 : isSelected ? `1px solid color-mix(in srgb, ${ACCENT} 40%, var(--navi-border))` : '1px solid var(--navi-border)',
               borderRadius: 10, padding: '8px 6px', cursor: 'pointer',
               transition: 'background 150ms',
+              minWidth: 0, overflow: 'hidden',
             }}
           >
             <p style={{ margin: '0 0 2px', fontSize: 9, fontWeight: 600, color: isToday ? ACCENT : 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'Sora, sans-serif' }}>
@@ -889,14 +890,14 @@ function WeekStrip({ weekData, selectedDate, onChipClick, onDayClick, onDifficul
                 return (
                   <div key={a.id}
                     className="chip"
-                    style={{ '--chip-color': color, cursor: 'pointer' }}
+                    style={{ '--chip-color': color, cursor: 'pointer', minWidth: 0, overflow: 'hidden' }}
                     onClick={e => { e.stopPropagation(); onChipClick(a) }}
                   >
-                    <p style={{ margin: 0, fontSize: 10.5, fontWeight: 600, color, lineHeight: 1.3, fontFamily: 'Sora, sans-serif' }}>{a.title}</p>
-                    <p style={{ margin: '2px 0 0', fontSize: 9.5, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif' }}>{a.class.name}</p>
-                    {a.note && <p style={{ margin: '2px 0 0', fontSize: 9.5, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif' }}>📝 note saved</p>}
+                    <p style={{ margin: 0, fontSize: 10.5, fontWeight: 600, color, lineHeight: 1.3, fontFamily: 'Sora, sans-serif', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.title}</p>
+                    <p style={{ margin: '2px 0 0', fontSize: 9.5, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.class.name}</p>
+                    {a.note && <p style={{ margin: '2px 0 0', fontSize: 9.5, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{'📝'} note saved</p>}
                     {fromCanvas && (
-                      <p style={{ margin: '2px 0 0', fontSize: 9, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif', opacity: 0.65, fontStyle: 'italic' }}>via Canvas</p>
+                      <p style={{ margin: '2px 0 0', fontSize: 9, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif', opacity: 0.65, fontStyle: 'italic', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>via Canvas</p>
                     )}
                     {diff === null || diff === undefined ? (
                       <p style={{ margin: '4px 0 0', fontSize: 9, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif' }}
