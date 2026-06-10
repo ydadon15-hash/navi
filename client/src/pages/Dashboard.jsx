@@ -312,10 +312,10 @@ function TabBar({ activeTab, onTabChange, onOpenCustomize }) {
   )
 }
 
-// ─── Calendar pill popup ──────────────────────────────────────────────
-function CalPillPopup({ event, anchorRect, onClose }) {
-  const POPUP_H = 86
-  const POPUP_W = 248
+// ─── Calendar event popup ──────────────────────────────────────────────────────
+function CalEventPopup({ event, anchorRect, onClose }) {
+  const POPUP_H = 90
+  const POPUP_W = 252
   const spaceAbove = anchorRect.top - 8
   const showAbove  = spaceAbove >= POPUP_H
   const top  = showAbove ? anchorRect.top - POPUP_H - 6 : anchorRect.bottom + 6
@@ -331,24 +331,24 @@ function CalPillPopup({ event, anchorRect, onClose }) {
     <div
       data-pill-popup="true"
       style={{
-        position: 'fixed', top, left, zIndex: 500,
+        position: 'fixed', top, left, zIndex: 600,
         width: POPUP_W,
         background: 'var(--surface)',
         border: '1px solid var(--navi-border)',
         borderTop: `3px solid ${accentColor}`,
         borderRadius: 10,
-        padding: '11px 14px',
-        boxShadow: '0 8px 24px rgba(0,0,0,0.14)',
+        padding: '12px 14px',
+        boxShadow: '0 8px 28px rgba(0,0,0,0.16)',
         fontFamily: 'Sora, sans-serif',
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 5 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
         <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text)', lineHeight: 1.4, flex: 1 }}>
           {event.title}
         </p>
         <button
           onClick={onClose}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--text-muted)', lineHeight: 1, padding: 0, flexShrink: 0, marginTop: -1 }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--text-muted)', lineHeight: 1, padding: 0, flexShrink: 0 }}
         >×</button>
       </div>
       {(dateLabel || event.time) && (
@@ -360,267 +360,273 @@ function CalPillPopup({ event, anchorRect, onClose }) {
   )
 }
 
-// ─── Calendar card ────────────────────────────────────────────────────────────────────────────
+// ─── Calendar card — week view ───────────────────────────────────────────────────────────────────
 function CalendarCard({ year, month, assignments, indicators, selectedDate, onSelectDate, onPrev, onNext, gcalEvents = [] }) {
-  const today = new Date()
-  const cells = buildCalGrid(year, month)
-  const isCurrentMonth = today.getFullYear() === year && today.getMonth() + 1 === month
-  const indicatorSet   = new Set(indicators)
+  // ── Grid constants ────────────────────────────────────────────────────────────────────
+  const GUTTER_W      = 40
+  const SLOT_H        = 80    // px per 2-hour slot
+  const DISPLAY_START = 6     // 6 AM
+  const DISPLAY_END   = 22    // 10 PM
+  const TOTAL_H       = ((DISPLAY_END - DISPLAY_START) / 2) * SLOT_H  // 640px
+  const PX_PER_MIN    = TOTAL_H / ((DISPLAY_END - DISPLAY_START) * 60)
+  const TIME_LABELS   = ['6AM','8AM','10AM','12PM','2PM','4PM','6PM','8PM','10PM']
+  const DOW_FULL      = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+  const today         = new Date()
 
-  const [isMobile,     setIsMobile]     = useState(typeof window !== 'undefined' && window.innerWidth < 768)
-  const [activePopup,  setActivePopup]  = useState(null)
-  const [expandedDays, setExpandedDays] = useState(new Set())
+  // ── State ───────────────────────────────────────────────────────────────────────────
+  const [weekOffset,  setWeekOffset]  = useState(0)
+  const [activePopup, setActivePopup] = useState(null)
+  const scrollRef = useRef(null)
 
+  // Scroll to 7 AM on mount (one slot from top)
   useEffect(() => {
-    const handler = () => setIsMobile(window.innerWidth < 768)
-    window.addEventListener('resize', handler)
-    return () => window.removeEventListener('resize', handler)
+    if (scrollRef.current) scrollRef.current.scrollTop = SLOT_H
   }, [])
 
-  useEffect(() => {
-    setActivePopup(null)
-    setExpandedDays(new Set())
-  }, [year, month])
+  // Reset popup when week changes
+  useEffect(() => { setActivePopup(null) }, [weekOffset])
 
+  // Close popup on outside click
   useEffect(() => {
     if (!activePopup) return
     const handler = e => {
-      if (!e.target.closest('[data-pill-popup]') && !e.target.closest('[data-cal-pill]'))
+      if (!e.target.closest('[data-pill-popup]') && !e.target.closest('[data-cal-event]'))
         setActivePopup(null)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [activePopup])
 
-  // Build per-day event list
+  // ── Week dates ───────────────────────────────────────────────────────────────────
+  const weekStart = (() => {
+    const d = new Date(today)
+    d.setDate(d.getDate() - d.getDay() + weekOffset * 7)
+    d.setHours(0, 0, 0, 0)
+    return d
+  })()
+
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart)
+    d.setDate(weekStart.getDate() + i)
+    return d
+  })
+
+  const midWeek     = weekDays[3]
+  const headerLabel = `${MONTH_NAMES[midWeek.getMonth()]} ${midWeek.getFullYear()}`
+
+  // ── Event map: dateStr → { timed, allDay } ─────────────────────────────────────────────
   const eventMap = {}
+  function slot(str) {
+    if (!eventMap[str]) eventMap[str] = { timed: [], allDay: [] }
+    return eventMap[str]
+  }
   for (const a of assignments) {
-    const d = new Date(a.dueDate)
-    if (d.getFullYear() === year && d.getMonth() + 1 === month) {
-      const day = d.getDate()
-      if (!eventMap[day]) eventMap[day] = []
-      eventMap[day].push({ type: 'canvas', title: a.title, time: null, fullDate: a.dueDate })
-    }
+    if (!a.dueDate) continue
+    slot(dateToStr(new Date(a.dueDate))).allDay.push({
+      type: 'canvas', title: a.title, fullDate: a.dueDate, time: null,
+    })
   }
   for (const ev of gcalEvents) {
-    const d = new Date(ev.startTime)
-    if (d.getFullYear() === year && d.getMonth() + 1 === month) {
-      const day = d.getDate()
-      if (!eventMap[day]) eventMap[day] = []
-      eventMap[day].push({ type: 'gcal', title: ev.title, time: fmtPillTime(ev.startTime), fullDate: ev.startTime })
+    if (!ev.startTime) continue
+    const str     = dateToStr(new Date(ev.startTime))
+    const timeStr = fmtPillTime(ev.startTime)
+    if (!timeStr) {
+      slot(str).allDay.push({ type: 'gcal', title: ev.title, fullDate: ev.startTime, time: null })
+    } else {
+      slot(str).timed.push({
+        type: 'gcal', title: ev.title, fullDate: ev.startTime,
+        startTime: ev.startTime, endTime: ev.endTime || null, time: timeStr,
+      })
     }
   }
 
-  // Mobile fallback dot data
-  const dotMap = {}
-  for (const a of assignments) {
-    const d   = new Date(a.dueDate)
-    const day = d.getDate()
-    if (!dotMap[day]) dotMap[day] = new Set()
-    dotMap[day].add(a.class.colorIndex)
-  }
-  const gcalDaySet = new Set()
-  for (const ev of gcalEvents) {
-    const d = new Date(ev.startTime)
-    if (d.getFullYear() === year && d.getMonth() + 1 === month) gcalDaySet.add(d.getDate())
-  }
+  const hasAnyAllDay = weekDays.some(d => (eventMap[dateToStr(d)]?.allDay?.length || 0) > 0)
 
-  let selDay = null
-  if (selectedDate) {
-    const [sy, sm, sd] = selectedDate.split('-').map(Number)
-    if (sy === year && sm === month) selDay = sd
+  // ── Event positioning helpers ──────────────────────────────────────────────────────
+  function evTop(startTime) {
+    const d   = new Date(startTime)
+    const min = (d.getHours() - DISPLAY_START) * 60 + d.getMinutes()
+    return Math.max(0, Math.min(TOTAL_H - 4, min * PX_PER_MIN))
+  }
+  function evHeight(startTime, endTime) {
+    const sd = new Date(startTime)
+    const sm = (sd.getHours() - DISPLAY_START) * 60 + sd.getMinutes()
+    if (!endTime) return Math.max(24, 60 * PX_PER_MIN)
+    const ed = new Date(endTime)
+    const em = (ed.getHours() - DISPLAY_START) * 60 + ed.getMinutes()
+    return Math.max(24, (em - sm) * PX_PER_MIN)
   }
 
-  const CELL_H      = 80
-  const GUTTER_W    = 36
-  const HOURS       = ['6AM','7AM','8AM','9AM','10AM','11AM','12PM','1PM','2PM','3PM','4PM','5PM','6PM','7PM','8PM','9PM','10PM','11PM']
-  const numWeekRows = Math.ceil(cells.length / 7)
-  const totalGridH  = numWeekRows * CELL_H
-  const slotH       = totalGridH / HOURS.length
-
-  function handlePillClick(e, ev) {
+  function handleEventClick(e, ev) {
     e.stopPropagation()
     const rect = e.currentTarget.getBoundingClientRect()
     setActivePopup(prev => prev && prev.event === ev ? null : { event: ev, anchorRect: rect })
   }
 
-  function toggleExpanded(e, day) {
-    e.stopPropagation()
-    setExpandedDays(prev => {
-      const next = new Set(prev)
-      next.has(day) ? next.delete(day) : next.add(day)
-      return next
-    })
+  const navBtnStyle = {
+    background: 'none', border: '1px solid var(--navi-border)', borderRadius: 6,
+    width: 28, height: 28, cursor: 'pointer', fontSize: 15, color: 'var(--text-muted)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   }
 
   return (
-    <div className="card" style={{ marginBottom: 0, border: '2px solid rgba(15, 110, 55, 0.85)' }}>
-      {/* Month header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-        <h3 style={{ fontSize: 16, margin: 0 }}>{MONTH_NAMES[month - 1]} {year}</h3>
-        <div style={{ display: 'flex', gap: 4 }}>
-          <button onClick={onPrev} style={{ background: 'none', border: '1px solid var(--navi-border)', borderRadius: 6, width: 28, height: 28, cursor: 'pointer', fontSize: 15, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>‹</button>
-          <button onClick={onNext} style={{ background: 'none', border: '1px solid var(--navi-border)', borderRadius: 6, width: 28, height: 28, cursor: 'pointer', fontSize: 15, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>›</button>
+    <div className="card" style={{ marginBottom: 0, border: '2px solid rgba(15, 110, 55, 0.85)', padding: 0, overflow: 'hidden' }}>
+
+      {/* ── Header: month label + prev/today/next ── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px 10px' }}>
+        <h3 style={{ fontSize: 16, margin: 0, fontFamily: 'Playfair Display, serif', color: 'var(--text)' }}>
+          {headerLabel}
+        </h3>
+        <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+          <button onClick={() => setWeekOffset(w => w - 1)} style={navBtnStyle}>&#8249;</button>
+          <button
+            onClick={() => setWeekOffset(0)}
+            style={{ ...navBtnStyle, fontSize: 11, width: 'auto', padding: '0 10px', fontFamily: 'Sora, sans-serif' }}
+          >Today</button>
+          <button onClick={() => setWeekOffset(w => w + 1)} style={navBtnStyle}>&#8250;</button>
         </div>
       </div>
 
-      {/* DOW header row (shifted right by gutter on desktop) */}
-      <div style={{ display: 'flex', marginBottom: 4 }}>
-        {!isMobile && <div style={{ width: GUTTER_W, flexShrink: 0 }} />}
-        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
-          {DOW_SHORT.map(d => (
-            <div key={d} style={{ textAlign: 'center', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', fontFamily: 'Sora, sans-serif', paddingBottom: 6 }}>
-              {d}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Time gutter + day grid */}
-      <div style={{ display: 'flex' }}>
-
-        {/* Time gutter */}
-        {!isMobile && (
-          <div style={{ width: GUTTER_W, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
-            {HOURS.map(h => (
-              <div key={h} style={{ height: slotH, flexShrink: 0, display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end', paddingRight: 5, paddingTop: 1 }}>
-                <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif', lineHeight: 1, opacity: 0.65 }}>
-                  {h}
+      {/* ── Day column headers (Sun–Sat + date number) ── */}
+      <div style={{ display: 'flex', borderBottom: '1px solid #EDE8DF' }}>
+        <div style={{ width: GUTTER_W, flexShrink: 0 }} />
+        {weekDays.map((day, i) => {
+          const isToday = isSameDay(day, today)
+          return (
+            <div
+              key={i}
+              onClick={() => onSelectDate(dateToStr(day))}
+              style={{ flex: 1, textAlign: 'center', padding: '6px 2px 8px', borderLeft: '1px solid #EDE8DF', cursor: 'pointer' }}
+            >
+              <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'Sora, sans-serif', lineHeight: 1.3 }}>
+                {DOW_FULL[day.getDay()]}
+              </div>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                width: 26, height: 26, borderRadius: '50%', marginTop: 3,
+                background: isToday ? ACCENT : 'transparent',
+              }}>
+                <span style={{ fontSize: 13, fontWeight: isToday ? 700 : 400, color: isToday ? '#fff' : 'var(--text)', fontFamily: 'Sora, sans-serif', lineHeight: 1 }}>
+                  {day.getDate()}
                 </span>
               </div>
-            ))}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* ── All-day strip (Canvas assignments + all-day GCal events) ── */}
+      {hasAnyAllDay && (
+        <div style={{ display: 'flex', borderBottom: '1px solid #EDE8DF', minHeight: 28 }}>
+          <div style={{ width: GUTTER_W, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 6 }}>
+            <span style={{ fontSize: 9, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif', opacity: 0.65 }}>all-day</span>
           </div>
-        )}
-
-        {/* Day cells grid with horizontal rules */}
-        <div style={{
-          flex: 1,
-          display: 'grid',
-          gridTemplateColumns: 'repeat(7, 1fr)',
-          backgroundImage: !isMobile
-            ? `repeating-linear-gradient(to bottom, rgba(0,0,0,0.05) 0px, rgba(0,0,0,0.05) 1px, transparent 1px, transparent ${slotH}px)`
-            : 'none',
-        }}>
-          {cells.map((day, i) => {
-            if (!day) return <div key={i} style={{ height: isMobile ? 32 : CELL_H }} />
-            const isToday     = isCurrentMonth && today.getDate() === day
-            const isSelected  = selDay === day
-            const dateStr     = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`
-            const hasPersonal = indicatorSet.has(dateStr)
-            const dayEvents   = eventMap[day] || []
-            const isExpanded  = expandedDays.has(day)
-            const visibleEvs  = isExpanded ? dayEvents : dayEvents.slice(0, 2)
-            const hiddenCount = dayEvents.length - 2
-
+          {weekDays.map((day, i) => {
+            const allDay = eventMap[dateToStr(day)]?.allDay || []
             return (
-              <div
-                key={i}
-                onClick={() => onSelectDate(dateStr)}
-                style={{
-                  display: 'flex', flexDirection: 'column',
-                  padding: isMobile ? '3px 1px' : '4px 3px',
-                  height: isMobile ? 32 : CELL_H,
-                  overflow: 'hidden',
-                  gap: 2, cursor: 'pointer',
-                  borderRight: '1px solid rgba(0,0,0,0.05)',
-                  borderBottom: '1px solid rgba(0,0,0,0.05)',
-                  boxSizing: 'border-box',
-                }}
-              >
-                {/* Day number top-right */}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', paddingRight: 4 }}>
-                  <span style={{
-                    fontSize: 12.5, fontFamily: 'Sora, sans-serif', lineHeight: 1.4,
-                    fontWeight: isToday || isSelected ? 700 : 400,
-                    color: isSelected ? ACCENT : isToday ? ACCENT : 'var(--text)',
-                    textDecoration: isToday ? 'underline' : 'none',
-                    textDecorationColor: ACCENT,
-                    textDecorationThickness: '2.5px',
-                    textUnderlineOffset: '3px',
-                    background: isSelected && !isToday ? `color-mix(in srgb, ${ACCENT} 10%, transparent)` : 'transparent',
-                    borderRadius: 4, padding: '1px 3px',
-                  }}>
-                    {day}
-                  </span>
-                </div>
-
-                {/* Pills (desktop) or dots (mobile) */}
-                {isMobile ? (
-                  <div style={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center', minHeight: 6 }}>
-                    {[...(dotMap[day] || new Set())].slice(0, 3).map((ci, j) => (
-                      <span key={j} style={{ width: 4, height: 4, borderRadius: '50%', background: CLASS_COLORS[ci] || ACCENT, display: 'block', flexShrink: 0 }} />
-                    ))}
-                    {gcalDaySet.has(day) && (
-                      <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--navi-accent)', display: 'block', flexShrink: 0 }} />
-                    )}
-                    {hasPersonal && (
-                      <span style={{ width: 4, height: 4, borderRadius: 1, background: 'var(--text-muted)', opacity: 0.5, display: 'block', flexShrink: 0 }} />
-                    )}
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {visibleEvs.map((ev, j) => {
-                      const label = ev.time ? `${ev.time} · ${ev.title}` : ev.title
-                      return (
-                        <button
-                          key={j}
-                          data-cal-pill="true"
-                          onClick={e => handlePillClick(e, ev)}
-                          title={label}
-                          style={{
-                            display: 'block',
-                            height: 20,
-                            width: '100%',
-                            minWidth: 0,
-                            padding: '0 5px',
-                            border: '1px solid #E8E2D9',
-                            borderRadius: 4,
-                            background: '#FDFCFA',
-                            boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            fontSize: 11,
-                            fontFamily: 'Sora, sans-serif',
-                            fontWeight: 500,
-                            color: 'var(--text)',
-                            cursor: 'pointer',
-                            boxSizing: 'border-box',
-                            textAlign: 'left',
-                            flexShrink: 0,
-                          }}
-                        >
-                          {label}
-                        </button>
-                      )
-                    })}
-                    {!isExpanded && hiddenCount > 0 && (
-                      <button
-                        onClick={e => toggleExpanded(e, day)}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 10, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif', fontWeight: 400, padding: '0 2px', textAlign: 'left', lineHeight: 1.4 }}
-                      >
-                        +{hiddenCount} more
-                      </button>
-                    )}
-                    {isExpanded && dayEvents.length > 2 && (
-                      <button
-                        onClick={e => toggleExpanded(e, day)}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 10, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif', fontWeight: 400, padding: '0 2px', textAlign: 'left', lineHeight: 1.4 }}
-                      >
-                        − less
-                      </button>
-                    )}
-                  </div>
-                )}
+              <div key={i} style={{ flex: 1, borderLeft: '1px solid #EDE8DF', padding: '3px 3px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {allDay.map((ev, j) => {
+                  const bc = ev.type === 'canvas' ? 'rgba(175,120,15,0.85)' : 'var(--navi-accent)'
+                  return (
+                    <div
+                      key={j}
+                      data-cal-event="true"
+                      onClick={e => handleEventClick(e, ev)}
+                      title={ev.title}
+                      style={{
+                        fontSize: 10, fontWeight: 500, color: 'var(--text)',
+                        fontFamily: 'Sora, sans-serif', padding: '2px 5px',
+                        borderRadius: 3, border: `1px solid ${bc}`, background: '#FDFCFA',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        cursor: 'pointer', boxSizing: 'border-box',
+                      }}
+                    >
+                      {ev.title}
+                    </div>
+                  )
+                })}
               </div>
             )
           })}
         </div>
+      )}
+
+      {/* ── Scrollable time grid ── */}
+      <div ref={scrollRef} style={{ overflowY: 'auto', maxHeight: 460 }}>
+        <div style={{ display: 'flex', height: TOTAL_H }}>
+
+          {/* Time gutter */}
+          <div style={{ width: GUTTER_W, flexShrink: 0, position: 'relative', height: TOTAL_H }}>
+            {TIME_LABELS.map((label, i) => (
+              <div key={label} style={{ position: 'absolute', top: i * SLOT_H - 6, right: 6, textAlign: 'right' }}>
+                <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif', lineHeight: 1, opacity: 0.75 }}>
+                  {label}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* 7 day columns */}
+          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', position: 'relative', height: TOTAL_H }}>
+            {/* Horizontal grid lines at each 2-hour mark */}
+            <div style={{
+              position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
+              backgroundImage: `repeating-linear-gradient(to bottom, #EDE8DF 0px, #EDE8DF 1px, transparent 1px, transparent ${SLOT_H}px)`,
+            }} />
+
+            {weekDays.map((day, colIdx) => {
+              const dStr    = dateToStr(day)
+              const timed   = eventMap[dStr]?.timed || []
+              const isToday = isSameDay(day, today)
+
+              return (
+                <div
+                  key={colIdx}
+                  onClick={() => onSelectDate(dStr)}
+                  style={{
+                    position: 'relative', height: TOTAL_H,
+                    borderLeft: '1px solid #EDE8DF',
+                    background: isToday ? 'rgba(15,110,55,0.018)' : 'transparent',
+                    boxSizing: 'border-box', cursor: 'pointer', zIndex: 1,
+                  }}
+                >
+                  {timed.map((ev, j) => {
+                    const top    = evTop(ev.startTime)
+                    const height = evHeight(ev.startTime, ev.endTime)
+                    return (
+                      <div
+                        key={j}
+                        data-cal-event="true"
+                        onClick={e => { e.stopPropagation(); handleEventClick(e, ev); onSelectDate(dStr) }}
+                        style={{
+                          position: 'absolute', top, left: 2, right: 2, height,
+                          border: '1.5px solid var(--navi-accent)',
+                          borderRadius: 4, background: '#FDFCFA',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+                          overflow: 'hidden', padding: '2px 5px',
+                          cursor: 'pointer', boxSizing: 'border-box', zIndex: 2,
+                        }}
+                      >
+                        <div style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3 }}>
+                          {ev.time}
+                        </div>
+                        <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--text)', fontFamily: 'Sora, sans-serif', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3 }}>
+                          {ev.title}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })}
+          </div>
+
+        </div>
       </div>
 
-      {/* Pill detail popup */}
+      {/* Event detail popup */}
       {activePopup && (
-        <CalPillPopup
+        <CalEventPopup
           event={activePopup.event}
           anchorRect={activePopup.anchorRect}
           onClose={() => setActivePopup(null)}
