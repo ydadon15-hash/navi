@@ -398,7 +398,7 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
               style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'stretch',
                 padding: isMobile ? '3px 1px' : '3px 2px',
-                minHeight: isMobile ? 32 : 64,
+                minHeight: isMobile ? 32 : 72,
                 gap: 2, cursor: 'pointer', borderRadius: 4,
               }}
             >
@@ -432,34 +432,57 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
                   )}
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3, margin: '0 4px' }}>
                   {dayEvents.slice(0, 2).map((ev, j) => {
                     const isCanvas = ev.type === 'canvas'
-                    const label = ev.time ? `${ev.time} · ${ev.title}` : ev.title
+                    const accentColor = isCanvas ? 'rgba(175,120,15,0.85)' : 'var(--navi-accent)'
                     return (
-                      <span key={j} style={{
-                        display: 'block',
-                        padding: '2px 4px',
-                        borderRadius: 3,
-                        fontSize: 9,
-                        fontFamily: 'Sora, sans-serif',
-                        fontWeight: 600,
-                        color: '#fff',
-                        background: isCanvas ? 'rgba(175,120,15,0.85)' : 'var(--navi-accent)',
+                      <div key={j} style={{
+                        display: 'flex',
+                        alignItems: 'baseline',
+                        gap: 3,
+                        padding: '4px 6px',
+                        borderRadius: 6,
+                        borderLeft: `3px solid ${accentColor}`,
+                        background: 'var(--navi-bg)',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
                         overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        lineHeight: 1.5,
                         boxSizing: 'border-box',
+                        minWidth: 0,
                       }}>
-                        {label}
-                      </span>
+                        {ev.time && (
+                          <span style={{
+                            fontSize: 11,
+                            fontFamily: 'Sora, sans-serif',
+                            fontWeight: 500,
+                            color: 'var(--text-muted)',
+                            whiteSpace: 'nowrap',
+                            flexShrink: 0,
+                            lineHeight: 1.4,
+                          }}>
+                            {ev.time} ·
+                          </span>
+                        )}
+                        <span style={{
+                          fontSize: 11,
+                          fontFamily: 'Sora, sans-serif',
+                          fontWeight: 500,
+                          color: 'var(--text)',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          lineHeight: 1.4,
+                          minWidth: 0,
+                        }}>
+                          {ev.title}
+                        </span>
+                      </div>
                     )
                   })}
                   {dayEvents.length > 2 && (
                     <span style={{
-                      fontSize: 8.5, fontFamily: 'Sora, sans-serif', color: 'var(--text-muted)',
-                      fontWeight: 500, paddingLeft: 2, lineHeight: 1.4,
+                      fontSize: 10, fontFamily: 'Sora, sans-serif', color: 'var(--text-muted)',
+                      fontWeight: 400, lineHeight: 1.4,
                     }}>
                       +{dayEvents.length - 2} more
                     </span>
