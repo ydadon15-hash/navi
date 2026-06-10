@@ -23,6 +23,25 @@
   --class-2: #D4622A;   /* terracotta */
   --class-3: #2E9E68;   /* sage green */
   --class-4: #8052C8;   /* violet     */
+
+  /* Calendar event block colours */
+  --ev-gcal-bg:        rgba(45, 90, 61, 0.08);
+  --ev-gcal-border:    var(--navi-accent);
+  --ev-gcal-text:      var(--navi-accent);
+  --ev-canvas-bg:      rgba(175, 120, 15, 0.08);
+  --ev-canvas-border:  rgba(175, 120, 15, 0.85);
+  --ev-canvas-text:    rgba(140, 95, 10, 1);
+  --cal-grid-line:     #EDE8DF;
+}
+
+.dark-mode {
+  --ev-gcal-bg:        rgba(74, 144, 217, 0.15);
+  --ev-gcal-border:    #4A90D9;
+  --ev-gcal-text:      #4A90D9;
+  --ev-canvas-bg:      rgba(210, 160, 50, 0.15);
+  --ev-canvas-border:  #D2A032;
+  --ev-canvas-text:    #D2A032;
+  --cal-grid-line:     rgba(255, 255, 255, 0.08);
 }
 
 /* ── Base ── */

@@ -53,6 +53,7 @@ function applyFullPreset(preset) {
   r.setProperty('--text-muted',       preset.textMuted)
   r.setProperty('--navi-text',        preset.textColor)
   r.setProperty('--navi-text-muted',  preset.textMuted)
+  document.documentElement.classList.toggle('dark-mode', preset.name === 'Dark Mode')
 }
 
 function applyColors({ bgColor, borderColor, accentColor }) {

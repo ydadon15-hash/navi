@@ -322,7 +322,7 @@ function CalEventPopup({ event, anchorRect, onClose }) {
   const left = Math.max(8, Math.min(anchorRect.left, window.innerWidth - POPUP_W - 8))
 
   const isCanvas    = event.type === 'canvas'
-  const accentColor = isCanvas ? 'rgba(175,120,15,0.85)' : 'var(--navi-accent)'
+  const accentColor = isCanvas ? 'var(--ev-canvas-border)' : 'var(--ev-gcal-border)'
   const dateLabel   = event.fullDate
     ? new Date(event.fullDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
     : ''
@@ -364,16 +364,13 @@ function CalEventPopup({ event, anchorRect, onClose }) {
 function CalendarCard({ year, month, assignments, indicators, selectedDate, onSelectDate, onPrev, onNext, gcalEvents = [] }) {
   // ── Grid constants ──────────────────────────────────────────────────────
   const GUTTER_W      = 40
-  const SLOT_H        = 58    // px per 2-hour slot (compact)
+  const SLOT_H        = 58
   const DISPLAY_START = 6
   const DISPLAY_END   = 22
   const TOTAL_H       = ((DISPLAY_END - DISPLAY_START) / 2) * SLOT_H  // 464px
   const PX_PER_MIN    = TOTAL_H / ((DISPLAY_END - DISPLAY_START) * 60)
   const TIME_LABELS   = ['6AM','8AM','10AM','12PM','2PM','4PM','6PM','8PM','10PM']
   const DOW_FULL      = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
-  // Every row — header, all-day strip, time grid — uses this identical template
-  // so column widths are pixel-perfect across all rows regardless of scrollbar
-  const GRID_COLS     = `${GUTTER_W}px repeat(7, 1fr)`
   const today         = new Date()
 
   // ── State ──────────────────────────────────────────────────────────────
@@ -381,7 +378,6 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
   const [activePopup, setActivePopup] = useState(null)
   const scrollRef = useRef(null)
 
-  // Scroll to 8 AM on mount
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = SLOT_H + 10
   }, [])
@@ -415,7 +411,7 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
   const midWeek     = weekDays[3]
   const headerLabel = `${MONTH_NAMES[midWeek.getMonth()]} ${midWeek.getFullYear()}`
 
-  // ── Event map: dateStr → { timed, allDay } ─────────────────────────────
+  // ── Event map: dateStr → { timed, allDay } ────────────────────────────────
   const eventMap = {}
   function slot(str) {
     if (!eventMap[str]) eventMap[str] = { timed: [], allDay: [] }
@@ -443,7 +439,7 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
 
   const hasAnyAllDay = weekDays.some(d => (eventMap[dateToStr(d)]?.allDay?.length || 0) > 0)
 
-  // ── Event positioning helpers ───────────────────────────────────────────
+  // ── Event positioning ───────────────────────────────────────────────────
   function evTop(startTime) {
     const d   = new Date(startTime)
     const min = (d.getHours() - DISPLAY_START) * 60 + d.getMinutes()
@@ -470,13 +466,13 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   }
 
-  // Grid lines drawn on each day column so they share the column coordinate system
-  const gridLinesBg = `repeating-linear-gradient(to bottom, #EDE8DF 0px, #EDE8DF 1px, transparent 1px, transparent ${SLOT_H}px)`
+  // Grid lines via CSS variable — updates automatically in dark mode
+  const gridLinesBg = `repeating-linear-gradient(to bottom, var(--cal-grid-line) 0px, var(--cal-grid-line) 1px, transparent 1px, transparent ${SLOT_H}px)`
 
   return (
     <div className="card" style={{ marginBottom: 0, border: '2px solid rgba(15, 110, 55, 0.85)', padding: 0, overflow: 'hidden' }}>
 
-      {/* ── Top nav bar (stays outside scroll area) ── */}
+      {/* ── Nav bar ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px 9px' }}>
         <h3 style={{ fontSize: 15, margin: 0, fontFamily: 'Playfair Display, serif', color: 'var(--text)' }}>
           {headerLabel}
@@ -492,30 +488,29 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
       </div>
 
       {/*
-        ── Scrollable section: sticky header + all-day strip + time grid ──
-        All three rows share the same scroll container and the same GRID_COLS
-        template, so column widths are identical regardless of scrollbar width.
-        The sticky header sits flush against the time grid with no gaps.
+        All rows share ONE scroll container so the scrollbar (if any) affects all
+        rows identically — column borders align pixel-perfect.
+        scrollbarGutter:stable reserves the scrollbar track even when not scrolling.
+        All rows use display:flex with width:GUTTER_W + flex:1 per day column.
       */}
-      <div ref={scrollRef} style={{ overflowY: 'auto', maxHeight: 520 }}>
+      <div ref={scrollRef} style={{ overflowY: 'auto', maxHeight: 520, scrollbarGutter: 'stable' }}>
 
-        {/* Sticky day column headers */}
+        {/* ── Sticky day column headers (flex, matches time grid exactly) ── */}
         <div style={{
-          position: 'sticky', top: 0, zIndex: 3,
-          background: 'var(--surface)',
-          display: 'grid', gridTemplateColumns: GRID_COLS,
-          borderBottom: '1px solid #EDE8DF',
+          position: 'sticky', top: 0, zIndex: 3, background: 'var(--surface)',
+          display: 'flex', borderBottom: '1px solid var(--cal-grid-line)',
         }}>
-          <div style={{ width: GUTTER_W, boxSizing: 'border-box' }} />
+          <div style={{ width: GUTTER_W, flexShrink: 0 }} />
           {weekDays.map((day, i) => {
             const isToday = isSameDay(day, today)
             return (
               <div
                 key={i}
                 onClick={() => onSelectDate(dateToStr(day))}
-                style={{ textAlign: 'center', padding: '5px 2px 7px', borderLeft: '1px solid #EDE8DF', cursor: 'pointer', boxSizing: 'border-box' }}
+                style={{ flex: 1, textAlign: 'center', padding: '5px 2px 7px', borderLeft: '1px solid var(--cal-grid-line)', cursor: 'pointer', boxSizing: 'border-box' }}
               >
-                <div style={{ fontSize: 9, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'Sora, sans-serif', lineHeight: 1.3 }}>
+                {/* Use explicit px lineHeight so header has integer pixel height → no sub-pixel gap */}
+                <div style={{ fontSize: 9, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'Sora, sans-serif', lineHeight: '12px' }}>
                   {DOW_FULL[day.getDay()]}
                 </div>
                 <div style={{
@@ -532,18 +527,20 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
           })}
         </div>
 
-        {/* All-day strip — same GRID_COLS */}
+        {/* ── All-day strip (flex, same structure) ── */}
         {hasAnyAllDay && (
-          <div style={{ display: 'grid', gridTemplateColumns: GRID_COLS, borderBottom: '1px solid #EDE8DF', minHeight: 26 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 6, boxSizing: 'border-box' }}>
+          <div style={{ display: 'flex', borderBottom: '1px solid var(--cal-grid-line)', minHeight: 26 }}>
+            <div style={{ width: GUTTER_W, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 6 }}>
               <span style={{ fontSize: 9, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif', opacity: 0.65 }}>all-day</span>
             </div>
             {weekDays.map((day, i) => {
               const allDay = eventMap[dateToStr(day)]?.allDay || []
               return (
-                <div key={i} style={{ borderLeft: '1px solid #EDE8DF', padding: '2px 3px', display: 'flex', flexDirection: 'column', gap: 2, boxSizing: 'border-box' }}>
+                <div key={i} style={{ flex: 1, borderLeft: '1px solid var(--cal-grid-line)', padding: '2px 3px', display: 'flex', flexDirection: 'column', gap: 2, boxSizing: 'border-box' }}>
                   {allDay.map((ev, j) => {
-                    const bc = ev.type === 'canvas' ? 'rgba(175,120,15,0.85)' : 'var(--navi-accent)'
+                    const bc = ev.type === 'canvas' ? 'var(--ev-canvas-border)' : 'var(--ev-gcal-border)'
+                    const bg = ev.type === 'canvas' ? 'var(--ev-canvas-bg)' : 'var(--ev-gcal-bg)'
+                    const tc = ev.type === 'canvas' ? 'var(--ev-canvas-text)' : 'var(--ev-gcal-text)'
                     return (
                       <div
                         key={j}
@@ -551,9 +548,9 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
                         onClick={e => handleEventClick(e, ev)}
                         title={ev.title}
                         style={{
-                          fontSize: 10, fontWeight: 500, color: 'var(--text)',
+                          fontSize: 10, fontWeight: 500, color: tc,
                           fontFamily: 'Sora, sans-serif', padding: '1px 4px',
-                          borderRadius: 3, border: `1px solid ${bc}`, background: '#FDFCFA',
+                          borderRadius: 3, border: `1px solid ${bc}`, background: bg,
                           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                           cursor: 'pointer', boxSizing: 'border-box',
                         }}
@@ -568,11 +565,11 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
           </div>
         )}
 
-        {/* Time grid — same GRID_COLS, same scroll container as header above */}
-        <div style={{ display: 'grid', gridTemplateColumns: GRID_COLS, height: TOTAL_H }}>
+        {/* ── Time grid: single flex row (gutter + 7 day columns) ── */}
+        <div style={{ display: 'flex', height: TOTAL_H }}>
 
-          {/* Time gutter: labels share the same coordinate system as day columns */}
-          <div style={{ position: 'relative', boxSizing: 'border-box' }}>
+          {/* Time gutter */}
+          <div style={{ width: GUTTER_W, flexShrink: 0, position: 'relative' }}>
             {TIME_LABELS.map((label, i) => (
               <div key={label} style={{ position: 'absolute', top: i * SLOT_H - 5, right: 6, textAlign: 'right' }}>
                 <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif', lineHeight: 1, opacity: 0.75 }}>
@@ -582,7 +579,7 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
             ))}
           </div>
 
-          {/* 7 day columns — grid lines baked into backgroundImage */}
+          {/* Day columns — flex:1 each matches header flex:1 exactly */}
           {weekDays.map((day, colIdx) => {
             const dStr    = dateToStr(day)
             const timed   = eventMap[dStr]?.timed || []
@@ -593,8 +590,8 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
                 key={colIdx}
                 onClick={() => onSelectDate(dStr)}
                 style={{
-                  position: 'relative',
-                  borderLeft: '1px solid #EDE8DF',
+                  flex: 1, position: 'relative',
+                  borderLeft: '1px solid var(--cal-grid-line)',
                   backgroundColor: isToday ? 'rgba(15,110,55,0.022)' : 'transparent',
                   backgroundImage: gridLinesBg,
                   boxSizing: 'border-box', cursor: 'pointer',
@@ -610,17 +607,17 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
                       onClick={e => { e.stopPropagation(); handleEventClick(e, ev); onSelectDate(dStr) }}
                       style={{
                         position: 'absolute', top, left: 2, right: 2, height,
-                        border: '1.5px solid var(--navi-accent)',
-                        borderRadius: 4, background: '#FDFCFA',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+                        border: '1.5px solid var(--ev-gcal-border)',
+                        borderRadius: 4, background: 'var(--ev-gcal-bg)',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
                         overflow: 'hidden', padding: '2px 4px',
                         cursor: 'pointer', boxSizing: 'border-box', zIndex: 2,
                       }}
                     >
-                      <div style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3 }}>
+                      <div style={{ fontSize: 10, color: 'var(--ev-gcal-text)', opacity: 0.8, fontFamily: 'Sora, sans-serif', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3 }}>
                         {ev.time}
                       </div>
-                      <div style={{ fontSize: 10, fontWeight: 500, color: 'var(--text)', fontFamily: 'Sora, sans-serif', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3 }}>
+                      <div style={{ fontSize: 10, fontWeight: 500, color: 'var(--ev-gcal-text)', fontFamily: 'Sora, sans-serif', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3 }}>
                         {ev.title}
                       </div>
                     </div>
@@ -633,7 +630,6 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
         </div>
       </div>
 
-      {/* Event detail popup */}
       {activePopup && (
         <CalEventPopup
           event={activePopup.event}
@@ -845,41 +841,45 @@ function NotePopup({ assignment, onClose, onSave }) {
 }
 
 // ─── Week strip ───────────────────────────────────────────────────────────────
-function WeekStrip({ weekData, selectedDate, onChipClick, onDayClick, onDifficultyRate }) {
+function WeekStrip({ weekData, selectedDate, onChipClick, onDayClick, onDifficultyRate, gcalEvents = [] }) {
   const today    = new Date()
   const weekDays = getWeekDays()
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, marginBottom: 20 }}>
       {weekDays.map((day, i) => {
-        const isToday    = isSameDay(day, today)
-        const dayStr     = dateToStr(day)
-        const isSelected = selectedDate === dayStr
-        const assignments = weekData[DAY_KEYS[i]] || []
+        const isToday       = isSameDay(day, today)
+        const dayStr        = dateToStr(day)
+        const isSelected    = selectedDate === dayStr
+        const assignments   = weekData[DAY_KEYS[i]] || []
+        const dayGcalEvents = gcalEvents.filter(ev => ev.startTime && isSameDay(new Date(ev.startTime), day))
 
         return (
           <div key={i}
             onClick={() => onDayClick(dayStr)}
             style={{
-              background: isSelected ? `color-mix(in srgb, ${ACCENT} 6%, var(--surface))` : 'var(--surface)',
-              border: isToday ? `1px solid ${ACCENT}` : isSelected ? `1px solid color-mix(in srgb, ${ACCENT} 40%, var(--navi-border))` : '2px solid rgba(15, 110, 55, 0.85)',
-              borderRadius: 10, padding: '10px 8px', cursor: 'pointer',
+              background: isToday
+                ? `color-mix(in srgb, ${ACCENT} 10%, var(--surface))`
+                : isSelected ? `color-mix(in srgb, ${ACCENT} 5%, var(--surface))` : 'var(--surface)',
+              border: isToday
+                ? `2px solid ${ACCENT}`
+                : isSelected ? `1px solid color-mix(in srgb, ${ACCENT} 40%, var(--navi-border))` : '1px solid var(--navi-border)',
+              borderRadius: 10, padding: '8px 6px', cursor: 'pointer',
               transition: 'background 150ms',
             }}
           >
-            <p style={{ margin: '0 0 2px', fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'Sora, sans-serif' }}>
+            <p style={{ margin: '0 0 2px', fontSize: 9, fontWeight: 600, color: isToday ? ACCENT : 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'Sora, sans-serif' }}>
               {DAY_LABELS[i]}
             </p>
-            <p style={{ margin: '0 0 8px', fontSize: 20, fontWeight: 700, fontFamily: 'Sora, sans-serif', color: isSelected ? ACCENT : 'var(--text)', lineHeight: 1 }}>
+            <p style={{ margin: '0 0 5px', fontSize: 16, fontWeight: 700, fontFamily: 'Sora, sans-serif', color: isToday || isSelected ? ACCENT : 'var(--text)', lineHeight: 1 }}>
               {day.getDate()}
             </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {assignments.map(a => {
                 const color = CLASS_COLORS[a.class.colorIndex] || ACCENT
                 const fromCanvas = !!a.canvasAssignmentId
                 const diff = a.difficulty
 
-                // Difficulty pill colors
                 const diffStyles = {
                   easy:   { bg: 'rgba(46,158,104,0.15)', color: '#2E9E68' },
                   medium: { bg: 'rgba(200,149,42,0.15)', color: '#C8952A' },
@@ -892,16 +892,14 @@ function WeekStrip({ weekData, selectedDate, onChipClick, onDayClick, onDifficul
                     style={{ '--chip-color': color, cursor: 'pointer' }}
                     onClick={e => { e.stopPropagation(); onChipClick(a) }}
                   >
-                    <p style={{ margin: 0, fontSize: 11.5, fontWeight: 600, color, lineHeight: 1.3, fontFamily: 'Sora, sans-serif' }}>{a.title}</p>
-                    <p style={{ margin: '2px 0 0', fontSize: 10.5, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif' }}>{a.class.name}</p>
-                    {a.note && <p style={{ margin: '2px 0 0', fontSize: 10, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif' }}>📝 note saved</p>}
+                    <p style={{ margin: 0, fontSize: 10.5, fontWeight: 600, color, lineHeight: 1.3, fontFamily: 'Sora, sans-serif' }}>{a.title}</p>
+                    <p style={{ margin: '2px 0 0', fontSize: 9.5, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif' }}>{a.class.name}</p>
+                    {a.note && <p style={{ margin: '2px 0 0', fontSize: 9.5, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif' }}>📝 note saved</p>}
                     {fromCanvas && (
-                      <p style={{ margin: '2px 0 0', fontSize: 9.5, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif', opacity: 0.65, fontStyle: 'italic' }}>via Canvas</p>
+                      <p style={{ margin: '2px 0 0', fontSize: 9, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif', opacity: 0.65, fontStyle: 'italic' }}>via Canvas</p>
                     )}
-
-                    {/* Difficulty prompt or pill */}
                     {diff === null || diff === undefined ? (
-                      <p style={{ margin: '4px 0 0', fontSize: 9.5, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif' }}
+                      <p style={{ margin: '4px 0 0', fontSize: 9, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif' }}
                         onClick={e => e.stopPropagation()}>
                         How hard?{' '}
                         {['easy', 'medium', 'hard'].map(level => (
@@ -916,13 +914,9 @@ function WeekStrip({ weekData, selectedDate, onChipClick, onDayClick, onDifficul
                       </p>
                     ) : (
                       <span style={{
-                        display: 'inline-block',
-                        marginTop: 4,
-                        fontSize: 9,
-                        fontWeight: 700,
-                        fontFamily: 'Sora, sans-serif',
-                        padding: '2px 6px',
-                        borderRadius: 99,
+                        display: 'inline-block', marginTop: 4,
+                        fontSize: 8.5, fontWeight: 700, fontFamily: 'Sora, sans-serif',
+                        padding: '2px 6px', borderRadius: 99,
                         background: diffStyles[diff]?.bg || 'var(--navi-border)',
                         color: diffStyles[diff]?.color || 'var(--text-muted)',
                         textTransform: 'capitalize',
@@ -933,6 +927,21 @@ function WeekStrip({ weekData, selectedDate, onChipClick, onDayClick, onDifficul
                   </div>
                 )
               })}
+
+              {/* GCal events for this day */}
+              {dayGcalEvents.map((ev, j) => (
+                <div key={`gcal-${j}`} style={{
+                  fontSize: 9.5, fontFamily: 'Sora, sans-serif',
+                  padding: '2px 5px', borderRadius: 4,
+                  background: 'var(--ev-gcal-bg)',
+                  border: '1px solid var(--ev-gcal-border)',
+                  color: 'var(--ev-gcal-text)',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  lineHeight: 1.3, cursor: 'default',
+                }}>
+                  {fmtPillTime(ev.startTime) ? `${fmtPillTime(ev.startTime)} · ${ev.title}` : ev.title}
+                </div>
+              ))}
             </div>
           </div>
         )
@@ -1699,6 +1708,7 @@ function DashboardTab({
             onChipClick={onChipClick}
             onDayClick={onSelectDate}
             onDifficultyRate={onDifficultyRate}
+            gcalEvents={gcalEvents}
           />
           <ProgressGrid classes={classes} weekData={weekData} />
         </div>
