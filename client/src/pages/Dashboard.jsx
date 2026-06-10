@@ -312,7 +312,7 @@ function TabBar({ activeTab, onTabChange, onOpenCustomize }) {
   )
 }
 
-// ─── Calendar event popup ──────────────────────────────────────────────────────
+// ─── Calendar event popup ──────────────────────────────────────────────
 function CalEventPopup({ event, anchorRect, onClose }) {
   const POPUP_H = 90
   const POPUP_W = 252
@@ -360,20 +360,22 @@ function CalEventPopup({ event, anchorRect, onClose }) {
   )
 }
 
-// ─── Calendar card — week view ───────────────────────────────────────────────────────────────────
+// ─── Calendar card — week view ───────────────────────────────────────────────────────────────────────────────────────────────
 function CalendarCard({ year, month, assignments, indicators, selectedDate, onSelectDate, onPrev, onNext, gcalEvents = [] }) {
-  // ── Grid constants ────────────────────────────────────────────────────────────────────
+  // ── Grid constants ────────────────────────────────────────────────────────────────────────────────────
   const GUTTER_W      = 40
-  const SLOT_H        = 80    // px per 2-hour slot
+  const SLOT_H        = 68    // px per 2-hour slot (15% smaller than 80)
   const DISPLAY_START = 6     // 6 AM
   const DISPLAY_END   = 22    // 10 PM
-  const TOTAL_H       = ((DISPLAY_END - DISPLAY_START) / 2) * SLOT_H  // 640px
+  const TOTAL_H       = ((DISPLAY_END - DISPLAY_START) / 2) * SLOT_H  // 544px
   const PX_PER_MIN    = TOTAL_H / ((DISPLAY_END - DISPLAY_START) * 60)
   const TIME_LABELS   = ['6AM','8AM','10AM','12PM','2PM','4PM','6PM','8PM','10PM']
   const DOW_FULL      = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+  // Shared CSS grid template: gutter + 7 equal columns — used on every row for pixel-perfect alignment
+  const GRID_COLS     = `${GUTTER_W}px repeat(7, 1fr)`
   const today         = new Date()
 
-  // ── State ───────────────────────────────────────────────────────────────────────────
+  // ── State ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
   const [weekOffset,  setWeekOffset]  = useState(0)
   const [activePopup, setActivePopup] = useState(null)
   const scrollRef = useRef(null)
@@ -397,7 +399,7 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
     return () => document.removeEventListener('mousedown', handler)
   }, [activePopup])
 
-  // ── Week dates ───────────────────────────────────────────────────────────────────
+  // ── Week dates ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
   const weekStart = (() => {
     const d = new Date(today)
     d.setDate(d.getDate() - d.getDay() + weekOffset * 7)
@@ -414,7 +416,7 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
   const midWeek     = weekDays[3]
   const headerLabel = `${MONTH_NAMES[midWeek.getMonth()]} ${midWeek.getFullYear()}`
 
-  // ── Event map: dateStr → { timed, allDay } ─────────────────────────────────────────────
+  // ── Event map: dateStr → { timed, allDay } ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
   const eventMap = {}
   function slot(str) {
     if (!eventMap[str]) eventMap[str] = { timed: [], allDay: [] }
@@ -442,7 +444,7 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
 
   const hasAnyAllDay = weekDays.some(d => (eventMap[dateToStr(d)]?.allDay?.length || 0) > 0)
 
-  // ── Event positioning helpers ──────────────────────────────────────────────────────
+  // ── Event positioning helpers ──────────────────────────────────────────────────────────────────────────────────────────────────────────
   function evTop(startTime) {
     const d   = new Date(startTime)
     const min = (d.getHours() - DISPLAY_START) * 60 + d.getMinutes()
@@ -469,6 +471,9 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   }
 
+  // Grid lines at each slot boundary — applied to each day column's backgroundImage
+  const gridLinesBg = `repeating-linear-gradient(to bottom, #EDE8DF 0px, #EDE8DF 1px, transparent 1px, transparent ${SLOT_H}px)`
+
   return (
     <div className="card" style={{ marginBottom: 0, border: '2px solid rgba(15, 110, 55, 0.85)', padding: 0, overflow: 'hidden' }}>
 
@@ -487,16 +492,16 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
         </div>
       </div>
 
-      {/* ── Day column headers (Sun–Sat + date number) ── */}
-      <div style={{ display: 'flex', borderBottom: '1px solid #EDE8DF' }}>
-        <div style={{ width: GUTTER_W, flexShrink: 0 }} />
+      {/* ── Day column headers — same GRID_COLS template ensures pixel-perfect alignment with grid below ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: GRID_COLS, borderBottom: '1px solid #EDE8DF' }}>
+        <div style={{ width: GUTTER_W, boxSizing: 'border-box' }} />
         {weekDays.map((day, i) => {
           const isToday = isSameDay(day, today)
           return (
             <div
               key={i}
               onClick={() => onSelectDate(dateToStr(day))}
-              style={{ flex: 1, textAlign: 'center', padding: '6px 2px 8px', borderLeft: '1px solid #EDE8DF', cursor: 'pointer' }}
+              style={{ textAlign: 'center', padding: '6px 2px 8px', borderLeft: '1px solid #EDE8DF', cursor: 'pointer', boxSizing: 'border-box' }}
             >
               <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'Sora, sans-serif', lineHeight: 1.3 }}>
                 {DOW_FULL[day.getDay()]}
@@ -515,16 +520,16 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
         })}
       </div>
 
-      {/* ── All-day strip (Canvas assignments + all-day GCal events) ── */}
+      {/* ── All-day strip — same GRID_COLS template ── */}
       {hasAnyAllDay && (
-        <div style={{ display: 'flex', borderBottom: '1px solid #EDE8DF', minHeight: 28 }}>
-          <div style={{ width: GUTTER_W, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 6 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: GRID_COLS, borderBottom: '1px solid #EDE8DF', minHeight: 28 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 6, boxSizing: 'border-box' }}>
             <span style={{ fontSize: 9, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif', opacity: 0.65 }}>all-day</span>
           </div>
           {weekDays.map((day, i) => {
             const allDay = eventMap[dateToStr(day)]?.allDay || []
             return (
-              <div key={i} style={{ flex: 1, borderLeft: '1px solid #EDE8DF', padding: '3px 3px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <div key={i} style={{ borderLeft: '1px solid #EDE8DF', padding: '3px 3px', display: 'flex', flexDirection: 'column', gap: 2, boxSizing: 'border-box' }}>
                 {allDay.map((ev, j) => {
                   const bc = ev.type === 'canvas' ? 'rgba(175,120,15,0.85)' : 'var(--navi-accent)'
                   return (
@@ -551,14 +556,14 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
         </div>
       )}
 
-      {/* ── Scrollable time grid ── */}
-      <div ref={scrollRef} style={{ overflowY: 'auto', maxHeight: 460 }}>
-        <div style={{ display: 'flex', height: TOTAL_H }}>
+      {/* ── Scrollable time grid — same GRID_COLS template ── */}
+      <div ref={scrollRef} style={{ overflowY: 'auto', maxHeight: 552 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: GRID_COLS, height: TOTAL_H }}>
 
-          {/* Time gutter */}
-          <div style={{ width: GUTTER_W, flexShrink: 0, position: 'relative', height: TOTAL_H }}>
+          {/* Time gutter: labels centered on their grid line */}
+          <div style={{ position: 'relative', boxSizing: 'border-box' }}>
             {TIME_LABELS.map((label, i) => (
-              <div key={label} style={{ position: 'absolute', top: i * SLOT_H - 6, right: 6, textAlign: 'right' }}>
+              <div key={label} style={{ position: 'absolute', top: i * SLOT_H - 5, right: 6, textAlign: 'right' }}>
                 <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif', lineHeight: 1, opacity: 0.75 }}>
                   {label}
                 </span>
@@ -566,60 +571,53 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
             ))}
           </div>
 
-          {/* 7 day columns */}
-          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', position: 'relative', height: TOTAL_H }}>
-            {/* Horizontal grid lines at each 2-hour mark */}
-            <div style={{
-              position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
-              backgroundImage: `repeating-linear-gradient(to bottom, #EDE8DF 0px, #EDE8DF 1px, transparent 1px, transparent ${SLOT_H}px)`,
-            }} />
+          {/* 7 day columns — grid lines baked into each column via backgroundImage */}
+          {weekDays.map((day, colIdx) => {
+            const dStr    = dateToStr(day)
+            const timed   = eventMap[dStr]?.timed || []
+            const isToday = isSameDay(day, today)
 
-            {weekDays.map((day, colIdx) => {
-              const dStr    = dateToStr(day)
-              const timed   = eventMap[dStr]?.timed || []
-              const isToday = isSameDay(day, today)
-
-              return (
-                <div
-                  key={colIdx}
-                  onClick={() => onSelectDate(dStr)}
-                  style={{
-                    position: 'relative', height: TOTAL_H,
-                    borderLeft: '1px solid #EDE8DF',
-                    background: isToday ? 'rgba(15,110,55,0.018)' : 'transparent',
-                    boxSizing: 'border-box', cursor: 'pointer', zIndex: 1,
-                  }}
-                >
-                  {timed.map((ev, j) => {
-                    const top    = evTop(ev.startTime)
-                    const height = evHeight(ev.startTime, ev.endTime)
-                    return (
-                      <div
-                        key={j}
-                        data-cal-event="true"
-                        onClick={e => { e.stopPropagation(); handleEventClick(e, ev); onSelectDate(dStr) }}
-                        style={{
-                          position: 'absolute', top, left: 2, right: 2, height,
-                          border: '1.5px solid var(--navi-accent)',
-                          borderRadius: 4, background: '#FDFCFA',
-                          boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
-                          overflow: 'hidden', padding: '2px 5px',
-                          cursor: 'pointer', boxSizing: 'border-box', zIndex: 2,
-                        }}
-                      >
-                        <div style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3 }}>
-                          {ev.time}
-                        </div>
-                        <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--text)', fontFamily: 'Sora, sans-serif', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3 }}>
-                          {ev.title}
-                        </div>
+            return (
+              <div
+                key={colIdx}
+                onClick={() => onSelectDate(dStr)}
+                style={{
+                  position: 'relative',
+                  borderLeft: '1px solid #EDE8DF',
+                  backgroundColor: isToday ? 'rgba(15,110,55,0.022)' : 'transparent',
+                  backgroundImage: gridLinesBg,
+                  boxSizing: 'border-box', cursor: 'pointer',
+                }}
+              >
+                {timed.map((ev, j) => {
+                  const top    = evTop(ev.startTime)
+                  const height = evHeight(ev.startTime, ev.endTime)
+                  return (
+                    <div
+                      key={j}
+                      data-cal-event="true"
+                      onClick={e => { e.stopPropagation(); handleEventClick(e, ev); onSelectDate(dStr) }}
+                      style={{
+                        position: 'absolute', top, left: 2, right: 2, height,
+                        border: '1.5px solid var(--navi-accent)',
+                        borderRadius: 4, background: '#FDFCFA',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
+                        overflow: 'hidden', padding: '2px 5px',
+                        cursor: 'pointer', boxSizing: 'border-box', zIndex: 2,
+                      }}
+                    >
+                      <div style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3 }}>
+                        {ev.time}
                       </div>
-                    )
-                  })}
-                </div>
-              )
-            })}
-          </div>
+                      <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--text)', fontFamily: 'Sora, sans-serif', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3 }}>
+                        {ev.title}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })}
 
         </div>
       </div>
@@ -1654,20 +1652,19 @@ function DashboardTab({
         {/* Left column */}
         <div>
           {/* Calendar + day panel */}
-          <div style={{ display: 'flex', gap: 14, marginBottom: 20, alignItems: 'flex-start' }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <CalendarCard
-                year={calYear} month={calMonth}
-                assignments={monthAssignments}
-                indicators={monthIndicators}
-                selectedDate={selectedDate}
-                onSelectDate={onSelectDate}
-                onPrev={onCalPrev} onNext={onCalNext}
-                gcalEvents={gcalEvents}
-              />
-            </div>
+          {/* Calendar always full-width; DayPanel floats as an overlay */}
+          <div style={{ position: 'relative', marginBottom: 20 }}>
+            <CalendarCard
+              year={calYear} month={calMonth}
+              assignments={monthAssignments}
+              indicators={monthIndicators}
+              selectedDate={selectedDate}
+              onSelectDate={onSelectDate}
+              onPrev={onCalPrev} onNext={onCalNext}
+              gcalEvents={gcalEvents}
+            />
             {selectedDate && dayData && (
-              <div style={{ flex: '0 0 240px' }}>
+              <div style={{ position: 'absolute', top: 10, right: 10, width: 275, maxWidth: 275, zIndex: 50 }}>
                 <DayPanel
                   date={selectedDate}
                   data={dayData}
