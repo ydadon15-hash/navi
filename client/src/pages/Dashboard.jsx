@@ -481,9 +481,9 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
 
         {/* Time gutter */}
         {!isMobile && (
-          <div style={{ width: GUTTER_W, flexShrink: 0, position: 'relative', height: totalGridH }}>
-            {HOURS.map((h, i) => (
-              <div key={h} style={{ position: 'absolute', top: i * slotH - 7, right: 0, width: '100%', display: 'flex', justifyContent: 'flex-end', paddingRight: 5 }}>
+          <div style={{ width: GUTTER_W, flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
+            {HOURS.map(h => (
+              <div key={h} style={{ height: slotH, flexShrink: 0, display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end', paddingRight: 5, paddingTop: 1 }}>
                 <span style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif', lineHeight: 1, opacity: 0.65 }}>
                   {h}
                 </span>
@@ -498,11 +498,11 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
           display: 'grid',
           gridTemplateColumns: 'repeat(7, 1fr)',
           backgroundImage: !isMobile
-            ? `repeating-linear-gradient(to bottom, transparent 0px, transparent ${slotH - 1}px, rgba(0,0,0,0.05) ${slotH - 1}px, rgba(0,0,0,0.05) ${slotH}px)`
+            ? `repeating-linear-gradient(to bottom, rgba(0,0,0,0.05) 0px, rgba(0,0,0,0.05) 1px, transparent 1px, transparent ${slotH}px)`
             : 'none',
         }}>
           {cells.map((day, i) => {
-            if (!day) return <div key={i} style={{ minHeight: isMobile ? 32 : CELL_H }} />
+            if (!day) return <div key={i} style={{ height: isMobile ? 32 : CELL_H }} />
             const isToday     = isCurrentMonth && today.getDate() === day
             const isSelected  = selDay === day
             const dateStr     = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`
@@ -518,8 +518,9 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
                 onClick={() => onSelectDate(dateStr)}
                 style={{
                   display: 'flex', flexDirection: 'column',
-                  padding: isMobile ? '3px 1px' : '4px 2px 4px 0',
-                  minHeight: isMobile ? 32 : CELL_H,
+                  padding: isMobile ? '3px 1px' : '4px 3px',
+                  height: isMobile ? 32 : CELL_H,
+                  overflow: 'hidden',
                   gap: 2, cursor: 'pointer',
                   borderRight: '1px solid rgba(0,0,0,0.05)',
                   borderBottom: '1px solid rgba(0,0,0,0.05)',
@@ -557,11 +558,9 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
                     )}
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '0 3px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     {visibleEvs.map((ev, j) => {
-                      const isCanvas    = ev.type === 'canvas'
-                      const borderColor = isCanvas ? 'rgba(175,120,15,0.85)' : 'var(--navi-accent)'
-                      const label       = ev.time ? `${ev.time} · ${ev.title}` : ev.title
+                      const label = ev.time ? `${ev.time} · ${ev.title}` : ev.title
                       return (
                         <button
                           key={j}
@@ -572,11 +571,12 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
                             display: 'block',
                             height: 20,
                             width: '100%',
+                            minWidth: 0,
                             padding: '0 5px',
-                            border: `1.5px solid ${borderColor}`,
+                            border: '1px solid #E8E2D9',
                             borderRadius: 4,
-                            background: '#FFFFFF',
-                            boxShadow: '0 1px 2px rgba(0,0,0,0.06)',
+                            background: '#FDFCFA',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap',
