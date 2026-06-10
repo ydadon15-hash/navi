@@ -123,7 +123,7 @@ function Sidebar({ classes, activeTab, onTabChange }) {
               disabled={!!item.disabled}
               style={{
                 width: '100%', display: 'flex', alignItems: 'center', gap: 9,
-                padding: '7px 10px', marginBottom: 2,
+                padding: '6px 9px', marginBottom: 2,
                 borderRadius: 8, border: 'none',
                 borderLeft: isActive ? '4px solid rgba(15, 110, 55, 0.95)' : '4px solid transparent',
                 cursor: item.disabled ? 'default' : 'pointer',
@@ -137,7 +137,7 @@ function Sidebar({ classes, activeTab, onTabChange }) {
                 transition: 'background 150ms',
               }} />
               <span style={{
-                flex: 1, fontSize: 13, fontFamily: 'Sora, sans-serif',
+                flex: 1, fontSize: 12, fontFamily: 'Sora, sans-serif',
                 color: isActive ? ACCENT : 'var(--text)',
                 fontWeight: isActive ? 600 : 400,
               }}>
@@ -360,35 +360,34 @@ function CalEventPopup({ event, anchorRect, onClose }) {
   )
 }
 
-// ─── Calendar card — week view ───────────────────────────────────────────────────────────────────────────────────────────────
+// ─── Calendar card — week view ──────────────────────────────────────────
 function CalendarCard({ year, month, assignments, indicators, selectedDate, onSelectDate, onPrev, onNext, gcalEvents = [] }) {
-  // ── Grid constants ────────────────────────────────────────────────────────────────────────────────────
+  // ── Grid constants ──────────────────────────────────────────────────────
   const GUTTER_W      = 40
-  const SLOT_H        = 68    // px per 2-hour slot (15% smaller than 80)
-  const DISPLAY_START = 6     // 6 AM
-  const DISPLAY_END   = 22    // 10 PM
-  const TOTAL_H       = ((DISPLAY_END - DISPLAY_START) / 2) * SLOT_H  // 544px
+  const SLOT_H        = 58    // px per 2-hour slot (compact)
+  const DISPLAY_START = 6
+  const DISPLAY_END   = 22
+  const TOTAL_H       = ((DISPLAY_END - DISPLAY_START) / 2) * SLOT_H  // 464px
   const PX_PER_MIN    = TOTAL_H / ((DISPLAY_END - DISPLAY_START) * 60)
   const TIME_LABELS   = ['6AM','8AM','10AM','12PM','2PM','4PM','6PM','8PM','10PM']
   const DOW_FULL      = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
-  // Shared CSS grid template: gutter + 7 equal columns — used on every row for pixel-perfect alignment
+  // Every row — header, all-day strip, time grid — uses this identical template
+  // so column widths are pixel-perfect across all rows regardless of scrollbar
   const GRID_COLS     = `${GUTTER_W}px repeat(7, 1fr)`
   const today         = new Date()
 
-  // ── State ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  // ── State ──────────────────────────────────────────────────────────────
   const [weekOffset,  setWeekOffset]  = useState(0)
   const [activePopup, setActivePopup] = useState(null)
   const scrollRef = useRef(null)
 
-  // Scroll to 7 AM on mount (one slot from top)
+  // Scroll to 8 AM on mount
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = SLOT_H
+    if (scrollRef.current) scrollRef.current.scrollTop = SLOT_H + 10
   }, [])
 
-  // Reset popup when week changes
   useEffect(() => { setActivePopup(null) }, [weekOffset])
 
-  // Close popup on outside click
   useEffect(() => {
     if (!activePopup) return
     const handler = e => {
@@ -399,7 +398,7 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
     return () => document.removeEventListener('mousedown', handler)
   }, [activePopup])
 
-  // ── Week dates ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  // ── Week dates ──────────────────────────────────────────────────────────
   const weekStart = (() => {
     const d = new Date(today)
     d.setDate(d.getDate() - d.getDay() + weekOffset * 7)
@@ -416,7 +415,7 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
   const midWeek     = weekDays[3]
   const headerLabel = `${MONTH_NAMES[midWeek.getMonth()]} ${midWeek.getFullYear()}`
 
-  // ── Event map: dateStr → { timed, allDay } ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  // ── Event map: dateStr → { timed, allDay } ─────────────────────────────
   const eventMap = {}
   function slot(str) {
     if (!eventMap[str]) eventMap[str] = { timed: [], allDay: [] }
@@ -444,7 +443,7 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
 
   const hasAnyAllDay = weekDays.some(d => (eventMap[dateToStr(d)]?.allDay?.length || 0) > 0)
 
-  // ── Event positioning helpers ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+  // ── Event positioning helpers ───────────────────────────────────────────
   function evTop(startTime) {
     const d   = new Date(startTime)
     const min = (d.getHours() - DISPLAY_START) * 60 + d.getMinutes()
@@ -453,10 +452,10 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
   function evHeight(startTime, endTime) {
     const sd = new Date(startTime)
     const sm = (sd.getHours() - DISPLAY_START) * 60 + sd.getMinutes()
-    if (!endTime) return Math.max(24, 60 * PX_PER_MIN)
+    if (!endTime) return Math.max(22, 60 * PX_PER_MIN)
     const ed = new Date(endTime)
     const em = (ed.getHours() - DISPLAY_START) * 60 + ed.getMinutes()
-    return Math.max(24, (em - sm) * PX_PER_MIN)
+    return Math.max(22, (em - sm) * PX_PER_MIN)
   }
 
   function handleEventClick(e, ev) {
@@ -471,15 +470,15 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   }
 
-  // Grid lines at each slot boundary — applied to each day column's backgroundImage
+  // Grid lines drawn on each day column so they share the column coordinate system
   const gridLinesBg = `repeating-linear-gradient(to bottom, #EDE8DF 0px, #EDE8DF 1px, transparent 1px, transparent ${SLOT_H}px)`
 
   return (
     <div className="card" style={{ marginBottom: 0, border: '2px solid rgba(15, 110, 55, 0.85)', padding: 0, overflow: 'hidden' }}>
 
-      {/* ── Header: month label + prev/today/next ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px 10px' }}>
-        <h3 style={{ fontSize: 16, margin: 0, fontFamily: 'Playfair Display, serif', color: 'var(--text)' }}>
+      {/* ── Top nav bar (stays outside scroll area) ── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px 9px' }}>
+        <h3 style={{ fontSize: 15, margin: 0, fontFamily: 'Playfair Display, serif', color: 'var(--text)' }}>
           {headerLabel}
         </h3>
         <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
@@ -492,75 +491,87 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
         </div>
       </div>
 
-      {/* ── Day column headers — same GRID_COLS template ensures pixel-perfect alignment with grid below ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: GRID_COLS, borderBottom: '1px solid #EDE8DF' }}>
-        <div style={{ width: GUTTER_W, boxSizing: 'border-box' }} />
-        {weekDays.map((day, i) => {
-          const isToday = isSameDay(day, today)
-          return (
-            <div
-              key={i}
-              onClick={() => onSelectDate(dateToStr(day))}
-              style={{ textAlign: 'center', padding: '6px 2px 8px', borderLeft: '1px solid #EDE8DF', cursor: 'pointer', boxSizing: 'border-box' }}
-            >
-              <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'Sora, sans-serif', lineHeight: 1.3 }}>
-                {DOW_FULL[day.getDay()]}
-              </div>
-              <div style={{
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                width: 26, height: 26, borderRadius: '50%', marginTop: 3,
-                background: isToday ? ACCENT : 'transparent',
-              }}>
-                <span style={{ fontSize: 13, fontWeight: isToday ? 700 : 400, color: isToday ? '#fff' : 'var(--text)', fontFamily: 'Sora, sans-serif', lineHeight: 1 }}>
-                  {day.getDate()}
-                </span>
-              </div>
-            </div>
-          )
-        })}
-      </div>
+      {/*
+        ── Scrollable section: sticky header + all-day strip + time grid ──
+        All three rows share the same scroll container and the same GRID_COLS
+        template, so column widths are identical regardless of scrollbar width.
+        The sticky header sits flush against the time grid with no gaps.
+      */}
+      <div ref={scrollRef} style={{ overflowY: 'auto', maxHeight: 520 }}>
 
-      {/* ── All-day strip — same GRID_COLS template ── */}
-      {hasAnyAllDay && (
-        <div style={{ display: 'grid', gridTemplateColumns: GRID_COLS, borderBottom: '1px solid #EDE8DF', minHeight: 28 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 6, boxSizing: 'border-box' }}>
-            <span style={{ fontSize: 9, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif', opacity: 0.65 }}>all-day</span>
-          </div>
+        {/* Sticky day column headers */}
+        <div style={{
+          position: 'sticky', top: 0, zIndex: 3,
+          background: 'var(--surface)',
+          display: 'grid', gridTemplateColumns: GRID_COLS,
+          borderBottom: '1px solid #EDE8DF',
+        }}>
+          <div style={{ width: GUTTER_W, boxSizing: 'border-box' }} />
           {weekDays.map((day, i) => {
-            const allDay = eventMap[dateToStr(day)]?.allDay || []
+            const isToday = isSameDay(day, today)
             return (
-              <div key={i} style={{ borderLeft: '1px solid #EDE8DF', padding: '3px 3px', display: 'flex', flexDirection: 'column', gap: 2, boxSizing: 'border-box' }}>
-                {allDay.map((ev, j) => {
-                  const bc = ev.type === 'canvas' ? 'rgba(175,120,15,0.85)' : 'var(--navi-accent)'
-                  return (
-                    <div
-                      key={j}
-                      data-cal-event="true"
-                      onClick={e => handleEventClick(e, ev)}
-                      title={ev.title}
-                      style={{
-                        fontSize: 10, fontWeight: 500, color: 'var(--text)',
-                        fontFamily: 'Sora, sans-serif', padding: '2px 5px',
-                        borderRadius: 3, border: `1px solid ${bc}`, background: '#FDFCFA',
-                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                        cursor: 'pointer', boxSizing: 'border-box',
-                      }}
-                    >
-                      {ev.title}
-                    </div>
-                  )
-                })}
+              <div
+                key={i}
+                onClick={() => onSelectDate(dateToStr(day))}
+                style={{ textAlign: 'center', padding: '5px 2px 7px', borderLeft: '1px solid #EDE8DF', cursor: 'pointer', boxSizing: 'border-box' }}
+              >
+                <div style={{ fontSize: 9, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'Sora, sans-serif', lineHeight: 1.3 }}>
+                  {DOW_FULL[day.getDay()]}
+                </div>
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  width: 22, height: 22, borderRadius: '50%', marginTop: 2,
+                  background: isToday ? ACCENT : 'transparent',
+                }}>
+                  <span style={{ fontSize: 11, fontWeight: isToday ? 700 : 400, color: isToday ? '#fff' : 'var(--text)', fontFamily: 'Sora, sans-serif', lineHeight: 1 }}>
+                    {day.getDate()}
+                  </span>
+                </div>
               </div>
             )
           })}
         </div>
-      )}
 
-      {/* ── Scrollable time grid — same GRID_COLS template ── */}
-      <div ref={scrollRef} style={{ overflowY: 'auto', maxHeight: 552 }}>
+        {/* All-day strip — same GRID_COLS */}
+        {hasAnyAllDay && (
+          <div style={{ display: 'grid', gridTemplateColumns: GRID_COLS, borderBottom: '1px solid #EDE8DF', minHeight: 26 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 6, boxSizing: 'border-box' }}>
+              <span style={{ fontSize: 9, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif', opacity: 0.65 }}>all-day</span>
+            </div>
+            {weekDays.map((day, i) => {
+              const allDay = eventMap[dateToStr(day)]?.allDay || []
+              return (
+                <div key={i} style={{ borderLeft: '1px solid #EDE8DF', padding: '2px 3px', display: 'flex', flexDirection: 'column', gap: 2, boxSizing: 'border-box' }}>
+                  {allDay.map((ev, j) => {
+                    const bc = ev.type === 'canvas' ? 'rgba(175,120,15,0.85)' : 'var(--navi-accent)'
+                    return (
+                      <div
+                        key={j}
+                        data-cal-event="true"
+                        onClick={e => handleEventClick(e, ev)}
+                        title={ev.title}
+                        style={{
+                          fontSize: 10, fontWeight: 500, color: 'var(--text)',
+                          fontFamily: 'Sora, sans-serif', padding: '1px 4px',
+                          borderRadius: 3, border: `1px solid ${bc}`, background: '#FDFCFA',
+                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                          cursor: 'pointer', boxSizing: 'border-box',
+                        }}
+                      >
+                        {ev.title}
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Time grid — same GRID_COLS, same scroll container as header above */}
         <div style={{ display: 'grid', gridTemplateColumns: GRID_COLS, height: TOTAL_H }}>
 
-          {/* Time gutter: labels centered on their grid line */}
+          {/* Time gutter: labels share the same coordinate system as day columns */}
           <div style={{ position: 'relative', boxSizing: 'border-box' }}>
             {TIME_LABELS.map((label, i) => (
               <div key={label} style={{ position: 'absolute', top: i * SLOT_H - 5, right: 6, textAlign: 'right' }}>
@@ -571,7 +582,7 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
             ))}
           </div>
 
-          {/* 7 day columns — grid lines baked into each column via backgroundImage */}
+          {/* 7 day columns — grid lines baked into backgroundImage */}
           {weekDays.map((day, colIdx) => {
             const dStr    = dateToStr(day)
             const timed   = eventMap[dStr]?.timed || []
@@ -602,14 +613,14 @@ function CalendarCard({ year, month, assignments, indicators, selectedDate, onSe
                         border: '1.5px solid var(--navi-accent)',
                         borderRadius: 4, background: '#FDFCFA',
                         boxShadow: '0 1px 3px rgba(0,0,0,0.07)',
-                        overflow: 'hidden', padding: '2px 5px',
+                        overflow: 'hidden', padding: '2px 4px',
                         cursor: 'pointer', boxSizing: 'border-box', zIndex: 2,
                       }}
                     >
                       <div style={{ fontSize: 10, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3 }}>
                         {ev.time}
                       </div>
-                      <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--text)', fontFamily: 'Sora, sans-serif', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3 }}>
+                      <div style={{ fontSize: 10, fontWeight: 500, color: 'var(--text)', fontFamily: 'Sora, sans-serif', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3 }}>
                         {ev.title}
                       </div>
                     </div>
@@ -1178,7 +1189,7 @@ function ConnectToolsSection({ gcalConnected, onGcalDisconnect, token }) {
     background: 'var(--surface)',
     border: '1px solid var(--navi-border)',
     borderRadius: 16,
-    padding: '24px 22px',
+    padding: '20px 19px',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
@@ -1189,7 +1200,7 @@ function ConnectToolsSection({ gcalConnected, onGcalDisconnect, token }) {
   }
 
   return (
-    <div style={{ marginBottom: 24 }}>
+    <div style={{ marginBottom: 20 }}>
       <p style={{
         fontFamily: 'Sora, sans-serif', fontSize: 11, fontWeight: 700,
         letterSpacing: '0.1em', textTransform: 'uppercase',
@@ -1573,11 +1584,11 @@ function DashboardTab({
   }
 
   return (
-    <div style={{ padding: 24 }}>
+    <div style={{ padding: 19 }}>
       {/* Top bar */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: checkinVisible ? 14 : 22, flexWrap: 'wrap', gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: checkinVisible ? 12 : 18, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h2 style={{ fontSize: 26, margin: 0, fontFamily: 'Playfair Display, serif' }}>
+          <h2 style={{ fontSize: 24, margin: 0, fontFamily: 'Playfair Display, serif' }}>
             {getGreeting()}, {greetingName || user?.name?.split(' ')[0]}.
           </h2>
           <p style={{ margin: '5px 0 0', fontSize: 13, color: 'var(--text-muted)', fontFamily: 'Sora, sans-serif' }}>
@@ -1647,7 +1658,7 @@ function DashboardTab({
       <ConnectToolsSection gcalConnected={gcalConnected} onGcalDisconnect={onGcalDisconnect} token={getToken()} />
 
       {/* Two-column main grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 20, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 17, alignItems: 'start' }}>
 
         {/* Left column */}
         <div>
